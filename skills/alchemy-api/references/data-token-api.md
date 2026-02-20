@@ -84,6 +84,10 @@ const json = await res.json();
 ## Testing / Mocking
 - Use a known wallet with a small token set for predictable tests.
 
+## Agentic Gateway
+This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `node-enhanced-apis.md`
 - `recipes-get-token-balances.md`

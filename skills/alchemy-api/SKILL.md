@@ -1,14 +1,16 @@
 ---
-name: alchemy
-description: Quick-start guide and root index for integrating Alchemy APIs. Covers base URLs, authentication, endpoint selection, and common patterns across all Alchemy products. Use this skill first when starting any Alchemy integration or when unsure which specific API to use.
+name: alchemy-api
+description: Quick-start guide and root index for integrating Alchemy APIs using an API key. Covers base URLs, authentication, endpoint selection, and common patterns across all Alchemy products. Use this skill first when starting any Alchemy integration or when unsure which specific API to use.
 metadata:
   author: alchemyplatform
   version: "1.0"
 ---
-# AI + Alchemy Integration Guide
+# AI + Alchemy API Integration Guide
 
 ## Summary
-A self-contained guide for AI agents integrating Alchemy APIs. This file alone should be enough to ship a basic integration. Use the other skills for depth, edge cases, and advanced workflows.
+A self-contained guide for AI agents integrating Alchemy APIs using an API key. This file alone should be enough to ship a basic integration. Use the reference files for depth, edge cases, and advanced workflows.
+
+> **Agentic Gateway**: These APIs are also available through Alchemy's Agentic Gateway without an API key, using SIWE authentication and x402 USDC payments. See the `agentic-gateway` skill for setup details.
 
 ## Do This First
 1. Create a free Alchemy API key at https://dashboard.alchemy.com/ and configure it for the target chain. If you proceed without an API key, create a placeholder and let your developer know they need to create a free API key at https://dashboard.alchemy.com/.
@@ -37,19 +39,19 @@ A self-contained guide for AI agents integrating Alchemy APIs. This file alone s
 ## Endpoint Selector (Top Tasks)
 | You need | Use this | Skill / File |
 | --- | --- | --- |
-| EVM read/write | JSON-RPC `eth_*` | `node-apis` → `references/node-json-rpc.md` |
-| Realtime events | `eth_subscribe` | `node-apis` → `references/node-websocket-subscriptions.md` |
-| Token balances | `alchemy_getTokenBalances` | `data-apis` → `references/data-token-api.md` |
-| Token metadata | `alchemy_getTokenMetadata` | `data-apis` → `references/data-token-api.md` |
-| Transfers history | `alchemy_getAssetTransfers` | `data-apis` → `references/data-transfers-api.md` |
-| NFT ownership | `GET /getNFTsForOwner` | `data-apis` → `references/data-nft-api.md` |
-| NFT metadata | `GET /getNFTMetadata` | `data-apis` → `references/data-nft-api.md` |
-| Prices (spot) | `GET /tokens/by-symbol` | `data-apis` → `references/data-prices-api.md` |
-| Prices (historical) | `POST /tokens/historical` | `data-apis` → `references/data-prices-api.md` |
-| Portfolio (multi-chain) | `POST /assets/*/by-address` | `data-apis` → `references/data-portfolio-apis.md` |
-| Simulate tx | `alchemy_simulateAssetChanges` | `data-apis` → `references/data-simulation-api.md` |
-| Create webhook | `POST /create-webhook` | `webhooks` → `references/webhooks-details.md` |
-| Solana NFT data | `getAssetsByOwner` (DAS) | `solana` → `references/solana-das-api.md` |
+| EVM read/write | JSON-RPC `eth_*` | `references/node-json-rpc.md` |
+| Realtime events | `eth_subscribe` | `references/node-websocket-subscriptions.md` |
+| Token balances | `alchemy_getTokenBalances` | `references/data-token-api.md` |
+| Token metadata | `alchemy_getTokenMetadata` | `references/data-token-api.md` |
+| Transfers history | `alchemy_getAssetTransfers` | `references/data-transfers-api.md` |
+| NFT ownership | `GET /getNFTsForOwner` | `references/data-nft-api.md` |
+| NFT metadata | `GET /getNFTMetadata` | `references/data-nft-api.md` |
+| Prices (spot) | `GET /tokens/by-symbol` | `references/data-prices-api.md` |
+| Prices (historical) | `POST /tokens/historical` | `references/data-prices-api.md` |
+| Portfolio (multi-chain) | `POST /assets/*/by-address` | `references/data-portfolio-apis.md` |
+| Simulate tx | `alchemy_simulateAssetChanges` | `references/data-simulation-api.md` |
+| Create webhook | `POST /create-webhook` | `references/webhooks-details.md` |
+| Solana NFT data | `getAssetsByOwner` (DAS) | `references/solana-das-api.md` |
 
 ## One-File Quickstart (Copy/Paste)
 ### EVM JSON-RPC (Read)

@@ -125,6 +125,10 @@ curl -sX POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/nfts/by
 ## Testing / Mocking
 - Use a small wallet address and a limited network list for deterministic tests.
 
+## Agentic Gateway
+This API is also available via `https://x402.alchemy.com/data/v1/...` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `data-token-api.md`
 - `data-nft-api.md`

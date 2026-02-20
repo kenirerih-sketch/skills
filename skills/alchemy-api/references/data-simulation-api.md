@@ -78,6 +78,10 @@ curl -s https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY \
 ## Testing / Mocking
 - Use deterministic calldata and block numbers.
 
+## Agentic Gateway
+This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `node-debug-api.md`
 - `recipes-simulate-transaction.md`

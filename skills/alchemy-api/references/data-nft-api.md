@@ -104,6 +104,10 @@ const json = await res.json();
 ## Testing / Mocking
 - Use a known NFT collection on testnet.
 
+## Agentic Gateway
+This API is also available via `https://x402.alchemy.com/{chainNetwork}/nft/v3/...` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `recipes-get-nft-ownership.md`
 - `recipes-get-nft-metadata.md`

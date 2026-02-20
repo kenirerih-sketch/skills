@@ -89,6 +89,10 @@ const json = await res.json();
 ## Testing / Mocking
 - Snapshot responses and use fixed block ranges.
 
+## Agentic Gateway
+These enhanced APIs (Token API, Transfers API) are also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `data-overview.md`
 - `recipes-overview.md`

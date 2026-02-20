@@ -76,6 +76,10 @@ curl -s -X POST "https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-
 ## Testing / Mocking
 - Use fixed date ranges to keep results stable.
 
+## Agentic Gateway
+This API is also available via `https://x402.alchemy.com/prices/v1/...` without an API key.
+See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+
 ## Related Files
 - `recipes-get-prices-current-historical.md`
 
