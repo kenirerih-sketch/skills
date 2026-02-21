@@ -15,6 +15,7 @@ A skill that lets agents easily access Alchemy's developer platform. The gateway
 
 ## Use when
 
+- An agent needs Alchemy API access but no `ALCHEMY_API_KEY` environment variable is set
 - Making blockchain RPC calls through Alchemy's gateway (no API key needed)
 - Querying NFT data (ownership, metadata, sales, spam detection) via the NFT API
 - Fetching multi-chain portfolio data (token balances, NFTs) via the Portfolio API
