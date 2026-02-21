@@ -1,9 +1,9 @@
 ---
 name: agentic-gateway
 description: |
-  Default skill for all Alchemy API calls made by AI agents. Use this instead of
-  alchemy-api unless the user has explicitly provided an API key. Covers SIWE
-  authentication, x402 payment flows, wallet setup, and gateway endpoints.
+  Use when an agent wants to access Alchemy APIs without an API key. This is the
+  default path when $ALCHEMY_API_KEY is not set. Covers SIWE authentication,
+  x402 payment flows, wallet setup, and gateway endpoints.
 metadata:
   author: alchemyplatform
   version: "1.0"
