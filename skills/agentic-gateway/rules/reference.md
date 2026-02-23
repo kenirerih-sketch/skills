@@ -19,32 +19,17 @@ Chain-specific routes use the chain slug in the URL (e.g. `https://x402.alchemy.
 
 ## API Method Details
 
-The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. The only difference is the base URL and authentication method.
+The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`x402.alchemy.com`) and include the `Authorization: SIWE` header.
 
-For full method documentation (parameters, response schemas, pagination, examples), see the **`alchemy-api` skill**. If the `alchemy-api` skill is installed, its reference files are located at `skills/alchemy-api/references/`. The key files are:
-
-| Gateway route | What to look up | `alchemy-api` reference file |
+| Gateway route | What to look up | Reference file |
 |---|---|---|
-| `/:chainNetwork/v2` | `eth_*` methods | `references/node-json-rpc.md` |
-| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | `references/data-token-api.md` |
-| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | `references/data-transfers-api.md` |
-| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges` | `references/data-simulation-api.md` |
-| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | `references/data-nft-api.md` |
-| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | `references/data-prices-api.md` |
-| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | `references/data-portfolio-apis.md` |
-
-**To use those examples with the gateway**, replace the base URL:
-- API key URL: `https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY` → Gateway URL: `https://x402.alchemy.com/eth-mainnet/v2`
-- API key URL: `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/...` → Gateway URL: `https://x402.alchemy.com/prices/v1/...`
-- API key URL: `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/...` → Gateway URL: `https://x402.alchemy.com/data/v1/...`
-- API key URL: `https://<network>.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/...` → Gateway URL: `https://x402.alchemy.com/<network>/nft/v3/...`
-
-And add the `Authorization: SIWE <token>` header instead of an API key.
-
-If the `alchemy-api` skill is not installed, install it with:
-```bash
-npx skills add https://github.com/alchemyplatform/skills --skill alchemy-api
-```
+| `/:chainNetwork/v2` | `eth_*` methods | [references/node-json-rpc.md](../references/node-json-rpc.md) |
+| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](../references/data-token-api.md) |
+| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](../references/data-transfers-api.md) |
+| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](../references/data-simulation-api.md) |
+| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](../references/data-nft-api.md) |
+| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](../references/data-prices-api.md) |
+| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](../references/data-portfolio-apis.md) |
 
 ---
 

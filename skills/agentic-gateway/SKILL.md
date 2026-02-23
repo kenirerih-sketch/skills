@@ -12,8 +12,6 @@ metadata:
 
 A skill that lets agents easily access Alchemy's developer platform. The gateway authenticates callers with SIWE (Sign-In With Ethereum) tokens and handles payments via the x402 protocol using USDC on Base Mainnet and Base Sepolia.
 
-> **API method details**: For full API method documentation (parameters, response formats, pagination), see the `alchemy-api` skill's references. This skill covers gateway-specific setup: authentication, payment, and endpoints.
-
 ## Use when
 
 - An agent needs Alchemy API access but no `ALCHEMY_API_KEY` environment variable is set
@@ -56,13 +54,16 @@ A skill that lets agents easily access Alchemy's developer platform. The gateway
 | [payment](rules/payment.md) | Manual x402 payment creation from a 402 response |
 | [reference](rules/reference.md) | Endpoints, networks, USDC addresses, headers, status codes |
 
-## API Method Cross-References
-
-For detailed API method documentation, see the `alchemy-api` skill:
+## References
 
 | Gateway route | API methods | Reference file |
 |---|---|---|
-| `/{chainNetwork}/v2` | `eth_*`, `alchemy_getTokenBalances`, `alchemy_getAssetTransfers`, etc. | `alchemy-api` → `references/node-json-rpc.md`, `references/data-token-api.md`, `references/data-transfers-api.md` |
-| `/{chainNetwork}/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | `alchemy-api` → `references/data-nft-api.md` |
-| `/prices/v1/*` | `tokens/by-symbol`, `tokens/historical`, etc. | `alchemy-api` → `references/data-prices-api.md` |
-| `/data/v1/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | `alchemy-api` → `references/data-portfolio-apis.md` |
+| `/{chainNetwork}/v2` | `eth_*` standard RPC | [references/node-json-rpc.md](references/node-json-rpc.md) |
+| `/{chainNetwork}/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](references/data-token-api.md) |
+| `/{chainNetwork}/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](references/data-transfers-api.md) |
+| `/{chainNetwork}/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](references/data-simulation-api.md) |
+| `/{chainNetwork}/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](references/data-nft-api.md) |
+| `/prices/v1/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](references/data-prices-api.md) |
+| `/data/v1/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](references/data-portfolio-apis.md) |
+
+> For the full breadth of Alchemy APIs (webhooks, Solana, wallets, etc.), see the `alchemy-api` skill.
