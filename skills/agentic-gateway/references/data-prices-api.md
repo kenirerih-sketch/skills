@@ -68,6 +68,10 @@ curl -s -H "Authorization: SIWE $TOKEN" \
 | `data[].prices[].lastUpdatedAt` | string | ISO 8601 timestamp |
 | `data[].error` | object | Error details if symbol not found (null on success) |
 
+> **Note**: This endpoint does not return market cap, 24h volume, or
+> percent change. To get market data, use `POST /tokens/historical`
+> with `withMarketData: true`.
+
 ---
 
 ## `POST /tokens/by-address`
@@ -160,23 +164,22 @@ curl -s -X POST "https://x402.alchemy.com/prices/v1/tokens/historical" \
 
 ```json
 {
-  "data": {
-    "symbol": "ETH",
-    "prices": [
-      {
-        "value": "3350.12",
-        "timestamp": "2025-01-01T00:01:13Z",
-        "marketCap": "274292310008.22",
-        "totalVolume": "6715146404.61"
-      },
-      {
-        "value": "3348.50",
-        "timestamp": "2025-01-01T01:03:18Z",
-        "marketCap": "274100000000.00",
-        "totalVolume": "6700000000.00"
-      }
-    ]
-  }
+  "symbol": "ETH",
+  "currency": "usd",
+  "data": [
+    {
+      "value": "3350.12",
+      "timestamp": "2025-01-01T00:01:13Z",
+      "marketCap": "274292310008.22",
+      "totalVolume": "6715146404.61"
+    },
+    {
+      "value": "3348.50",
+      "timestamp": "2025-01-01T01:03:18Z",
+      "marketCap": "274100000000.00",
+      "totalVolume": "6700000000.00"
+    }
+  ]
 }
 ```
 
@@ -184,12 +187,13 @@ curl -s -X POST "https://x402.alchemy.com/prices/v1/tokens/historical" \
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `data.symbol` | string | Token symbol |
-| `data.prices` | array | Chronologically sorted price points |
-| `data.prices[].value` | string | Price as decimal string |
-| `data.prices[].timestamp` | string | ISO 8601 timestamp |
-| `data.prices[].marketCap` | string | Market cap (only if `withMarketData: true`) |
-| `data.prices[].totalVolume` | string | 24h volume (only if `withMarketData: true`) |
+| `symbol` | string | Token symbol |
+| `currency` | string | Currency code (e.g., `"usd"`) |
+| `data` | array | Chronologically sorted price points |
+| `data[].value` | string | Price as decimal string |
+| `data[].timestamp` | string | ISO 8601 timestamp |
+| `data[].marketCap` | string | Market cap (only if `withMarketData: true`) |
+| `data[].totalVolume` | string | 24h volume (only if `withMarketData: true`) |
 
 ---
 

@@ -12,13 +12,18 @@ npm install @x402/fetch @x402/core @x402/evm viem
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient } from "@x402/core/http";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { toClientEvmSigner } from "@x402/evm";
 import { wrapFetchWithPayment } from "@x402/fetch";
 import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 
 // Setup (do once)
 const account = privateKeyToAccount("0x..." as `0x${string}`);
+const publicClient = createPublicClient({ chain: base, transport: http() });
+const signer = toClientEvmSigner(account, publicClient);
 const client = new x402Client();
-registerExactEvmScheme(client, { signer: account });
+registerExactEvmScheme(client, { signer });
 const httpClient = new x402HTTPClient(client);
 const paidFetch = wrapFetchWithPayment(fetch, httpClient);
 
@@ -52,13 +57,18 @@ import axios from "axios";
 import { x402Client } from "@x402/core/client";
 import { x402HTTPClient } from "@x402/core/http";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { toClientEvmSigner } from "@x402/evm";
 import { wrapAxiosWithPayment } from "@x402/axios";
 import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 
 // Setup (do once)
 const account = privateKeyToAccount("0x..." as `0x${string}`);
+const publicClient = createPublicClient({ chain: base, transport: http() });
+const signer = toClientEvmSigner(account, publicClient);
 const client = new x402Client();
-registerExactEvmScheme(client, { signer: account });
+registerExactEvmScheme(client, { signer });
 const httpClient = new x402HTTPClient(client);
 const paidAxios = wrapAxiosWithPayment(axios.create(), httpClient);
 
@@ -88,6 +98,18 @@ Both wrappers follow the same flow:
 2. If **200** — return the result immediately.
 3. If **402** — read the `accepts` array, create a signed USDC payment using the registered `x402Client`, and **retry** with a `Payment-Signature` header.
 4. Subsequent calls with the same SIWE token return 200 without payment.
+
+## REST API Endpoints (Prices, Portfolio, NFT)
+
+The `paidFetch`/`paidAxios` wrappers are designed for JSON-RPC endpoints
+(`/:chainNetwork/v2`). For REST API POST endpoints like
+`/prices/v1/tokens/historical`, use **plain `fetch`** with the
+`Authorization: SIWE <token>` header instead. The x402 wrapper can
+corrupt POST request bodies on REST endpoints, causing 400 errors.
+
+The SIWE token alone is sufficient for authentication on all endpoints
+once payment has been established (e.g., via an initial GET request
+through `paidFetch`).
 
 ## Selecting a Payment Network
 

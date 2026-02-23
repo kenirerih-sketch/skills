@@ -70,11 +70,13 @@ curl -s -X POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/token
           "decimals": 18,
           "logo": "https://..."
         },
-        "tokenPrice": {
-          "currency": "usd",
-          "value": "1970.69",
-          "lastUpdatedAt": "2025-06-01T12:00:00Z"
-        }
+        "tokenPrices": [
+          {
+            "currency": "usd",
+            "value": "1970.69",
+            "lastUpdatedAt": "2025-06-01T12:00:00Z"
+          }
+        ]
       },
       {
         "network": "eth-mainnet",
@@ -87,11 +89,13 @@ curl -s -X POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/token
           "decimals": 6,
           "logo": "https://..."
         },
-        "tokenPrice": {
-          "currency": "usd",
-          "value": "0.9998",
-          "lastUpdatedAt": "2025-06-01T12:00:00Z"
-        }
+        "tokenPrices": [
+          {
+            "currency": "usd",
+            "value": "0.9998",
+            "lastUpdatedAt": "2025-06-01T12:00:00Z"
+          }
+        ]
       }
     ],
     "pageKey": null
@@ -109,7 +113,7 @@ curl -s -X POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/token
 | `data.tokens[].tokenAddress` | string | Token contract address (`"native"` for native token) |
 | `data.tokens[].tokenBalance` | string | Human-readable balance (decimal-adjusted) |
 | `data.tokens[].tokenMetadata` | object | Token name, symbol, decimals, logo |
-| `data.tokens[].tokenPrice` | object | Current price (currency, value, lastUpdatedAt) |
+| `data.tokens[].tokenPrices` | array | Price entries per currency (each has currency, value, lastUpdatedAt) |
 | `data.pageKey` | string | Pagination cursor (null if no more results) |
 
 ---
