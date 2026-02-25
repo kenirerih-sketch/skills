@@ -19,7 +19,7 @@ npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
 ```
 
-Or if importing an existing key, write the private key to `wallet-key.txt` using the agent's file-writing tools (not shell commands, to avoid exposing the key in shell history). Then add it to `.gitignore`:
+Or if importing an existing key, ask the user where their private key file is located and extract it into `wallet-key.txt` via a shell pipe (see [wallet-bootstrap](wallet-bootstrap.md) for examples). Never read or write the raw key through agent tools or shell echo.
 
 ```bash
 echo "wallet-key.txt" >> .gitignore

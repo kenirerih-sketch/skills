@@ -20,7 +20,19 @@ If the user already has a wallet available (e.g. a private key in an environment
 
 ## Path B: Import an Existing Wallet
 
-Write the user's private key to `wallet-key.txt` using the agent's file-writing tools (not shell commands, to avoid exposing the key in shell history). Then verify it:
+Ask the user where their private key file is located (e.g. a `.env` file, a keystore export, a text file). Once you have the file path, extract the key into `wallet-key.txt` using a shell pipe so it never appears on screen or in tool output:
+
+```bash
+# Example: extract from a .env file
+grep PRIVATE_KEY /path/to/.env | cut -d '=' -f2 > wallet-key.txt
+
+# Example: key is already the sole content of a file
+cp /path/to/keyfile wallet-key.txt
+```
+
+> **Important:** Never read or write the raw private key through agent tools (Read, Write, Edit) or shell echo — both expose the key in their output. Always use shell pipes that write directly to a file.
+
+Verify the imported key:
 
 ```bash
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
