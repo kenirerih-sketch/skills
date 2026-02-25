@@ -20,13 +20,17 @@ Options:
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--private-key <key>` | (required) | Path to a key file, hex private key (`0x...`), or raw hex |
+| `--private-key <key>` | (required) | Path to a key file (recommended), hex private key, or raw hex |
 | `--expires-after <duration>` | `1h` | Token lifetime (e.g. `30m`, `2h`, `7d`) |
 
-The command prints the encoded SIWE token to stdout. Capture it for use in requests:
+> **Security:** Always pass a file path rather than a raw key to avoid exposing the private key in shell history and process listings.
+
+The command prints the encoded SIWE token to stdout. Pipe it to a file to avoid terminal exposure:
 
 ```bash
-TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
+npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt > siwe-token.txt
+TOKEN=$(cat siwe-token.txt)
+
 curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Authorization: SIWE $TOKEN" \
   -H "Content-Type: application/json" \
@@ -35,7 +39,7 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
 
 ## Library: Generate a SIWE Token in Code
 
-For applications, use the `signSiwe` function from `@alchemy/x402`:
+For applications, use the `signSiwe` function from `@alchemy/x402`. Read the private key from an environment variable — never hardcode it:
 
 ```bash
 npm install @alchemy/x402
@@ -44,8 +48,9 @@ npm install @alchemy/x402
 ```typescript
 import { signSiwe } from "@alchemy/x402";
 
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 const siweToken = await signSiwe({
-  privateKey: "0x<your_private_key>",
+  privateKey,
   expiresAfter: "1h", // optional, default "1h"
 });
 

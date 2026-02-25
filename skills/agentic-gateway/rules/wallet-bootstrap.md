@@ -20,12 +20,9 @@ If the user already has a wallet available (e.g. a private key in an environment
 
 ## Path B: Import an Existing Wallet
 
-Save the user's private key to a file and verify it:
+Write the user's private key to `wallet-key.txt` using the agent's file-writing tools (not shell commands, to avoid exposing the key in shell history). Then verify it:
 
 ```bash
-echo "0x<user_private_key>" > wallet-key.txt
-echo "wallet-key.txt" >> .gitignore
-
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
@@ -35,30 +32,32 @@ Output:
 { "address": "0xYourChecksummedAddress" }
 ```
 
+Add the key file to `.gitignore`:
+
+```bash
+echo "wallet-key.txt" >> .gitignore
+```
+
 Proceed to [Fund the Wallet](#fund-the-wallet).
 
 ---
 
 ## Path C: Create a New Wallet
 
-```bash
-npx @alchemy/x402 wallet generate
-```
-
-Output:
-
-```json
-{ "privateKey": "0x...", "address": "0xYourChecksummedAddress" }
-```
-
-Save the private key to a file for use with CLI commands:
+Generate a wallet and pipe the private key directly to a file so it never appears on screen:
 
 ```bash
 npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
 ```
 
-> **Note:** Show the user their wallet address so they can fund it. Read it with `npx @alchemy/x402 wallet import --private-key ./wallet-key.txt`.
+Retrieve the wallet address (safe to display):
+
+```bash
+npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
+```
+
+> **Important:** Never run `wallet generate` without piping to a file — it prints the private key to stdout.
 
 Proceed to [Fund the Wallet](#fund-the-wallet).
 
@@ -81,17 +80,18 @@ Transfer USDC to your wallet address on Base Mainnet.
 
 ## Using the Wallet in Code
 
-For building applications, use the `@alchemy/x402` library:
+For building applications, use the `@alchemy/x402` library. Always read the private key from an environment variable — never hardcode it in source files:
 
 ```typescript
 import { generateWallet, getWalletAddress } from "@alchemy/x402";
 
-// Generate a new wallet
+// Generate a new wallet (in a setup script, save privateKey to a secure location)
 const wallet = generateWallet();
-// { privateKey: "0x...", address: "0x..." }
+// wallet.address → "0x..."
 
 // Or derive address from an existing key
-const address = getWalletAddress("0x<your_private_key>");
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+const address = getWalletAddress(privateKey);
 ```
 
 Use the private key for SIWE token generation (see [authentication](authentication.md)) and payment signing (see [making-requests](making-requests.md)).

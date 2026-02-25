@@ -14,7 +14,8 @@ npm install @alchemy/x402 @x402/fetch
 import { buildX402Client, signSiwe } from "@alchemy/x402";
 import { wrapFetchWithPayment } from "@x402/fetch";
 
-const privateKey = "0x<your_private_key>";
+// Read private key from environment — never hardcode it
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 
 // Setup (do once)
 const client = buildX402Client(privateKey);
@@ -59,7 +60,8 @@ import axios from "axios";
 import { buildX402Client, signSiwe } from "@alchemy/x402";
 import { wrapAxiosWithPayment } from "@x402/axios";
 
-const privateKey = "0x<your_private_key>";
+// Read private key from environment — never hardcode it
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 
 // Setup (do once)
 const client = buildX402Client(privateKey);

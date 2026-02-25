@@ -12,22 +12,23 @@ For SDK-based workflows with automatic payment handling, see [making-requests](m
 
 ## Step 0: Ensure Wallet Exists
 
-If no wallet is set up yet, generate one and save the private key to a file:
+If no wallet is set up yet, generate one and save the private key directly to a file:
 
 ```bash
-# Generate a new wallet and save the private key
 npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
-
-# View the wallet address
-npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
-Or import an existing key:
+Or if importing an existing key, write the private key to `wallet-key.txt` using the agent's file-writing tools (not shell commands, to avoid exposing the key in shell history). Then add it to `.gitignore`:
 
 ```bash
-echo "0x<your_private_key>" > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
+```
+
+View the wallet address (safe to display):
+
+```bash
+npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
 Ensure the wallet has USDC on Base (Mainnet or Sepolia). See [wallet-bootstrap](wallet-bootstrap.md) for funding instructions.
@@ -35,8 +36,7 @@ Ensure the wallet has USDC on Base (Mainnet or Sepolia). See [wallet-bootstrap](
 ## Step 1: Generate a SIWE Token
 
 ```bash
-TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
-echo "$TOKEN" > siwe-token.txt
+npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt > siwe-token.txt
 ```
 
 For subsequent requests, read from the cached file:
@@ -186,8 +186,7 @@ For more details on the payment flow, see [payment](payment.md).
 If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the SIWE token has expired. Regenerate it:
 
 ```bash
-TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
-echo "$TOKEN" > siwe-token.txt
+npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt > siwe-token.txt
 # Retry the request with the new token
 ```
 

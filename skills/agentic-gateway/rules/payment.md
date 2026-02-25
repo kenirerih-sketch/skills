@@ -45,7 +45,7 @@ fi
 
 ## Library: Create a Payment in Code
 
-For applications, use the `createPayment` function from `@alchemy/x402`:
+For applications, use the `createPayment` function from `@alchemy/x402`. Read the private key from an environment variable — never hardcode it:
 
 ```bash
 npm install @alchemy/x402
@@ -54,8 +54,9 @@ npm install @alchemy/x402
 ```typescript
 import { createPayment } from "@alchemy/x402";
 
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 const paymentSignature = await createPayment({
-  privateKey: "0x<your_private_key>",
+  privateKey,
   paymentRequiredHeader: response.headers.get("PAYMENT-REQUIRED")!,
 });
 ```
@@ -94,8 +95,9 @@ The 402 `accepts` array may contain multiple options (different networks). The C
 ```typescript
 import { buildX402Client } from "@alchemy/x402";
 
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 // buildX402Client returns an x402Client configured for Base Mainnet and Base Sepolia
-const client = buildX402Client("0x<your_private_key>");
+const client = buildX402Client(privateKey);
 ```
 
 ## Payment Error Responses
