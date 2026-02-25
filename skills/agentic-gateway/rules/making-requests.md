@@ -2,32 +2,33 @@
 
 The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the same SIWE auth and x402 payment flow. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
-Use either `@x402/fetch` or `@x402/axios` to make requests. Both automatically handle the 402 → sign → retry flow so you don't need to manage payments manually.
+Use `@alchemy/x402` with `@x402/fetch` or `@x402/axios` to make requests. Both wrappers automatically handle the 402 → sign → retry flow so you don't need to manage payments manually.
 
 ## Option A: `@x402/fetch`
 
 ```bash
-npm install @x402/fetch @x402/core @x402/evm viem
+npm install @alchemy/x402 @x402/fetch
 ```
 
 ```typescript
-import { x402Client } from "@x402/core/client";
-import { x402HTTPClient } from "@x402/core/http";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { toClientEvmSigner } from "@x402/evm";
+import { buildX402Client, signSiwe } from "@alchemy/x402";
 import { wrapFetchWithPayment } from "@x402/fetch";
-import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
+
+const privateKey = "0x<your_private_key>";
 
 // Setup (do once)
-const account = privateKeyToAccount("0x..." as `0x${string}`);
-const publicClient = createPublicClient({ chain: base, transport: http() });
-const signer = toClientEvmSigner(account, publicClient);
-const client = new x402Client();
-registerExactEvmScheme(client, { signer });
-const httpClient = new x402HTTPClient(client);
-const paidFetch = wrapFetchWithPayment(fetch, httpClient);
+const client = buildX402Client(privateKey);
+const siweToken = await signSiwe({ privateKey });
+
+// Wrap fetch with SIWE auth
+const authedFetch: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `SIWE ${siweToken}`);
+  return fetch(input, { ...init, headers });
+};
+
+// Wrap with automatic x402 payment handling
+const paidFetch = wrapFetchWithPayment(authedFetch, client);
 
 // Make a request
 const response = await paidFetch("https://x402.alchemy.com/eth-mainnet/v2", {
@@ -35,7 +36,6 @@ const response = await paidFetch("https://x402.alchemy.com/eth-mainnet/v2", {
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Authorization: `SIWE ${siweToken}`,
   },
   body: JSON.stringify({
     id: 1,
@@ -51,28 +51,20 @@ const result = await response.json();
 ## Option B: `@x402/axios`
 
 ```bash
-npm install @x402/axios @x402/core @x402/evm axios viem
+npm install @alchemy/x402 @x402/axios axios
 ```
 
 ```typescript
 import axios from "axios";
-import { x402Client } from "@x402/core/client";
-import { x402HTTPClient } from "@x402/core/http";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { toClientEvmSigner } from "@x402/evm";
+import { buildX402Client, signSiwe } from "@alchemy/x402";
 import { wrapAxiosWithPayment } from "@x402/axios";
-import { privateKeyToAccount } from "viem/accounts";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
+
+const privateKey = "0x<your_private_key>";
 
 // Setup (do once)
-const account = privateKeyToAccount("0x..." as `0x${string}`);
-const publicClient = createPublicClient({ chain: base, transport: http() });
-const signer = toClientEvmSigner(account, publicClient);
-const client = new x402Client();
-registerExactEvmScheme(client, { signer });
-const httpClient = new x402HTTPClient(client);
-const paidAxios = wrapAxiosWithPayment(axios.create(), httpClient);
+const client = buildX402Client(privateKey);
+const siweToken = await signSiwe({ privateKey });
+const paidAxios = wrapAxiosWithPayment(axios.create(), client);
 
 // Make a request
 const { data } = await paidAxios.post(
@@ -98,7 +90,7 @@ Both wrappers follow the same flow:
 
 1. Send the request with the `Authorization` header.
 2. If **200** — return the result immediately.
-3. If **402** — read the `accepts` array, create a signed USDC payment using the registered `x402Client`, and **retry** with a `Payment-Signature` header.
+3. If **402** — read the `accepts` array, create a signed USDC payment using `buildX402Client`, and **retry** with a `Payment-Signature` header.
 4. Subsequent calls with the same SIWE token return 200 without payment.
 
 ## REST API Endpoints (Prices, Portfolio, NFT)
@@ -115,19 +107,7 @@ through `paidFetch`).
 
 ## Selecting a Payment Network
 
-If the 402 response offers multiple payment networks, control which one is selected by passing a selector to the `x402Client` constructor:
-
-```typescript
-const client = new x402Client(
-  (_x402Version, requirements) => {
-    const selected = requirements.find((r) => r.network === "eip155:8453");
-    if (!selected) throw new Error("Base Mainnet payment not available");
-    return selected;
-  },
-);
-```
-
-The default behavior picks the first option.
+If the 402 response offers multiple payment networks, `buildX402Client` is pre-configured for both Base Mainnet (`eip155:8453`) and Base Sepolia (`eip155:84532`). The default behavior picks the first compatible option.
 
 ## Response Scenarios
 

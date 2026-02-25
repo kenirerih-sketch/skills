@@ -8,77 +8,54 @@ Every request to the gateway must include an `Authorization` header with a SIWE 
 Authorization: SIWE <base64(siwe_message)>.<signature>
 ```
 
-## Step-by-Step Token Generation
+## CLI: Generate a SIWE Token
 
-### Step 1: Derive an account from a private key
+For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. Pass the path to a file containing the private key:
 
-```typescript
-import { privateKeyToAccount } from "viem/accounts";
-
-const account = privateKeyToAccount("0x<your_private_key>" as `0x${string}`);
-// account.address → "0xYourChecksummedAddress"
+```bash
+npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt
 ```
 
-### Step 2: Create a SIWE message
+Options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--private-key <key>` | (required) | Path to a key file, hex private key (`0x...`), or raw hex |
+| `--expires-after <duration>` | `1h` | Token lifetime (e.g. `30m`, `2h`, `7d`) |
+
+The command prints the encoded SIWE token to stdout. Capture it for use in requests:
+
+```bash
+TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
+curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+  -H "Authorization: SIWE $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
+```
+
+## Library: Generate a SIWE Token in Code
+
+For applications, use the `signSiwe` function from `@alchemy/x402`:
+
+```bash
+npm install @alchemy/x402
+```
 
 ```typescript
-import { SiweMessage } from "siwe";
+import { signSiwe } from "@alchemy/x402";
 
-function generateNonce(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let nonce = "";
-  for (let i = 0; i < 16; i++) {
-    nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return nonce;
-}
-
-const siweMessage = new SiweMessage({
-  domain: "x402.alchemy.com",
-  address: account.address,
-  statement: "Sign in to Alchemy Gateway",
-  uri: "https://x402.alchemy.com",
-  version: "1",
-  chainId: 8453,
-  nonce: generateNonce(),
-  expirationTime: new Date(Date.now() + 3_600_000).toISOString(), // 1 hour
+const siweToken = await signSiwe({
+  privateKey: "0x<your_private_key>",
+  expiresAfter: "1h", // optional, default "1h"
 });
 
-const messageText = siweMessage.prepareMessage();
-```
-
-### Step 3: Sign the message
-
-```typescript
-import { createWalletClient, http } from "viem";
-import { base } from "viem/chains";
-
-const walletClient = createWalletClient({
-  account,
-  chain: base,
-  transport: http(),
-});
-
-const signature = await walletClient.signMessage({ message: messageText });
-```
-
-### Step 4: Encode the token
-
-Base64-encode the message text, then join it with the signature using a `.` separator:
-
-```typescript
-const base64Message = Buffer.from(messageText).toString("base64");
-const token = `${base64Message}.${signature}`;
-```
-
-### Step 5: Set the Authorization header
-
-```typescript
-const authHeader = `SIWE ${token}`;
-// Use as: { Authorization: authHeader }
+// Use in requests
+const headers = { Authorization: `SIWE ${siweToken}` };
 ```
 
 ## SIWE Message Fields
+
+The generated token contains a SIWE message with these fields:
 
 | Field | Value | Notes |
 |-------|-------|-------|
@@ -89,7 +66,7 @@ const authHeader = `SIWE ${token}`;
 | `version` | `1` | SIWE spec version |
 | `chainId` | `8453` | Base Mainnet chain ID |
 | `nonce` | Random alphanumeric string | At least 8 characters |
-| `expirationTime` | ISO 8601 timestamp | Recommended: 1 hour from now |
+| `expirationTime` | ISO 8601 timestamp | Default: 1 hour from now |
 
 ## Auth Error Codes
 
@@ -107,9 +84,9 @@ When authentication fails, the gateway returns HTTP 401 with a JSON body:
 |------|-------|------------|
 | `MISSING_AUTH` | No `Authorization` header provided | Add the `Authorization: SIWE <token>` header to your request |
 | `INVALID_AUTH_FORMAT` | Token is not in `base64.signature` format or Base64 decoding failed | Ensure the token is `base64(message).signature` with exactly one `.` separator |
-| `INVALID_SIWE` | SIWE message could not be parsed | Check that you called `siweMessage.prepareMessage()` and Base64-encoded the full output |
-| `INVALID_SIGNATURE` | Signature does not match the message signer | Ensure the same account that created the SIWE message also signed it |
-| `INVALID_DOMAIN` | SIWE message domain does not match `x402.alchemy.com` | Set `domain` to `x402.alchemy.com` (or `localhost` for local dev) |
+| `INVALID_SIWE` | SIWE message could not be parsed | Regenerate the token using the CLI or `signSiwe()` |
+| `INVALID_SIGNATURE` | Signature does not match the message signer | Ensure the correct private key is being used |
+| `INVALID_DOMAIN` | SIWE message domain does not match `x402.alchemy.com` | Use the `@alchemy/x402` CLI or library — they set the correct domain automatically |
 | `MESSAGE_EXPIRED` | SIWE message `expirationTime` has passed or `notBefore` is in the future | Generate a new SIWE token — the current one has expired |
 
 ## Handling Auth Errors
@@ -118,7 +95,7 @@ If you receive a 401 response, parse the `code` field and take the appropriate a
 
 - **Regenerable errors** (`MESSAGE_EXPIRED`): Generate a fresh SIWE token and retry the request.
 - **Configuration errors** (`INVALID_DOMAIN`, `MISSING_AUTH`, `INVALID_AUTH_FORMAT`): Fix the token generation code — these will not resolve by retrying.
-- **Signing errors** (`INVALID_SIGNATURE`, `INVALID_SIWE`): The token is malformed. Re-check steps 2–4 of the token generation flow.
+- **Signing errors** (`INVALID_SIGNATURE`, `INVALID_SIWE`): The token is malformed. Regenerate using the CLI or `signSiwe()`.
 
 ```typescript
 if (response.status === 401) {
@@ -126,7 +103,7 @@ if (response.status === 401) {
 
   if (body.code === "MESSAGE_EXPIRED") {
     // Token expired — regenerate and retry
-    const newToken = await generateNewSiweToken();
+    const newToken = await signSiwe({ privateKey });
     // retry request with new token...
   } else {
     // Configuration or signing error — do not retry, fix the code

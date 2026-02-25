@@ -1,6 +1,6 @@
 # Curl Workflow
 
-A lightweight way to call any Alchemy gateway endpoint using curl and short scripts, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same SIWE auth and payment flow.
+A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same SIWE auth and payment flow.
 
 ## When to Use
 
@@ -12,81 +12,40 @@ For SDK-based workflows with automatic payment handling, see [making-requests](m
 
 ## Step 0: Ensure Wallet Exists
 
-If no wallet is set up yet (no `wallet.json` or private key available), run the [wallet-bootstrap](wallet-bootstrap.md) flow first.
-If `siwe-token.txt` does not exist or the token is expired, run Step 1 below.
-Then proceed directly to Step 2 to make API calls.
+If no wallet is set up yet, generate one and save the private key to a file:
 
-## Prerequisites
+```bash
+# Generate a new wallet and save the private key
+npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
+echo "wallet-key.txt" >> .gitignore
 
-- `npx tsx` is available (comes with Node.js)
-- `siwe-token.txt` is in `.gitignore` (add it if not)
+# View the wallet address
+npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
+```
+
+Or import an existing key:
+
+```bash
+echo "0x<your_private_key>" > wallet-key.txt
+echo "wallet-key.txt" >> .gitignore
+```
+
+Ensure the wallet has USDC on Base (Mainnet or Sepolia). See [wallet-bootstrap](wallet-bootstrap.md) for funding instructions.
 
 ## Step 1: Generate a SIWE Token
 
-Run this script with `npx tsx` to create a SIWE token and print it to stdout:
-
-```typescript
-// generate-siwe-token.ts
-import { readFileSync } from "node:fs";
-import { privateKeyToAccount } from "viem/accounts";
-import { createWalletClient, http } from "viem";
-import { base } from "viem/chains";
-import { SiweMessage } from "siwe";
-
-// Load wallet
-const wallet = JSON.parse(readFileSync("wallet.json", "utf-8")) as {
-  privateKey: `0x${string}`;
-};
-const account = privateKeyToAccount(wallet.privateKey);
-
-// Generate nonce
-const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-let nonce = "";
-for (let i = 0; i < 16; i++) {
-  nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-}
-
-// Create SIWE message (1 hour expiry)
-const expiresAt = new Date(Date.now() + 3_600_000).toISOString();
-const siweMessage = new SiweMessage({
-  domain: "x402.alchemy.com",
-  address: account.address,
-  statement: "Sign in to Alchemy Gateway",
-  uri: "https://x402.alchemy.com",
-  version: "1",
-  chainId: 8453,
-  nonce,
-  expirationTime: expiresAt,
-});
-const messageText = siweMessage.prepareMessage();
-
-// Sign
-const walletClient = createWalletClient({
-  account,
-  chain: base,
-  transport: http(),
-});
-const signature = await walletClient.signMessage({ message: messageText });
-
-// Encode token and print to stdout
-const token = `${Buffer.from(messageText).toString("base64")}.${signature}`;
-console.log(token);
-```
-
-Capture the token in a shell variable and cache it to `siwe-token.txt` for reuse across multiple requests:
-
 ```bash
-TOKEN=$(npx tsx generate-siwe-token.ts)
+TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
 echo "$TOKEN" > siwe-token.txt
 ```
 
-For subsequent requests, read from the cached file instead of regenerating:
+For subsequent requests, read from the cached file:
 
 ```bash
 TOKEN=$(cat siwe-token.txt)
 ```
 
-> **Important:** SIWE tokens expire after 1 hour. If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add `siwe-token.txt` to `.gitignore`.
+> **Important:** SIWE tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add `siwe-token.txt` to `.gitignore`.
 
 ## Step 2: Make API Calls with curl
 
@@ -187,13 +146,13 @@ curl -s -X POST "https://x402.alchemy.com/data/v1/assets/tokens/by-address" \
 
 ## Step 3: Handle 402 Payment Required
 
-If curl returns HTTP 402, the gateway requires a one-time USDC payment for this SIWE token. Save the `PAYMENT-REQUIRED` response header and run a payment script:
+If curl returns HTTP 402, the gateway requires a one-time USDC payment for this SIWE token. Extract the `PAYMENT-REQUIRED` header and use the CLI to create a payment:
 
 ```bash
 TOKEN=$(cat siwe-token.txt)
 
 # Save response headers and capture HTTP status code
-HTTP_CODE=$(curl -s -o /dev/null -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: SIWE $TOKEN" \
@@ -203,8 +162,8 @@ if [ "$HTTP_CODE" = "402" ]; then
   # Extract the PAYMENT-REQUIRED header value
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Generate payment signature from the header
-  PAYMENT_SIG=$(npx tsx create-payment.ts "$PAYMENT_REQUIRED")
+  # Generate payment signature using the CLI
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
   # Retry with payment
   curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
@@ -213,41 +172,9 @@ if [ "$HTTP_CODE" = "402" ]; then
     -H "Authorization: SIWE $TOKEN" \
     -H "Payment-Signature: $PAYMENT_SIG" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
+else
+  cat response.json
 fi
-```
-
-The `create-payment.ts` script decodes the `PAYMENT-REQUIRED` header value, creates a signed payment, and prints the encoded `Payment-Signature` header:
-
-```typescript
-// create-payment.ts
-import { readFileSync } from "node:fs";
-import { x402Client } from "@x402/core/client";
-import {
-  decodePaymentRequiredHeader,
-  encodePaymentSignatureHeader,
-  x402HTTPClient,
-} from "@x402/core/http";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { privateKeyToAccount } from "viem/accounts";
-
-const encoded = process.argv[2];
-if (!encoded) {
-  console.error("Usage: npx tsx create-payment.ts <PAYMENT-REQUIRED header value>");
-  process.exit(1);
-}
-
-const wallet = JSON.parse(readFileSync("wallet.json", "utf-8")) as {
-  privateKey: `0x${string}`;
-};
-const paymentRequired = decodePaymentRequiredHeader(encoded);
-
-const account = privateKeyToAccount(wallet.privateKey);
-const client = new x402Client();
-registerExactEvmScheme(client, { signer: account });
-const httpClient = new x402HTTPClient(client);
-
-const paymentPayload = await httpClient.createPaymentPayload(paymentRequired);
-console.log(encodePaymentSignatureHeader(paymentPayload));
 ```
 
 For more details on the payment flow, see [payment](payment.md).
@@ -256,12 +183,12 @@ For more details on the payment flow, see [payment](payment.md).
 
 ## Step 4: Handle 401 MESSAGE_EXPIRED
 
-If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the SIWE token has expired. Regenerate it and update the cache file:
+If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the SIWE token has expired. Regenerate it:
 
 ```bash
-TOKEN=$(npx tsx generate-siwe-token.ts)
+TOKEN=$(npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt)
 echo "$TOKEN" > siwe-token.txt
 # Retry the request with the new token
 ```
 
-For other 401 error codes, the token generation itself needs fixing — see [authentication](authentication.md) for the full list of auth error codes.
+For other 401 error codes, see [authentication](authentication.md) for the full list of auth error codes.

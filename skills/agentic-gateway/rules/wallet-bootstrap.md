@@ -14,41 +14,25 @@ Based on the answer, follow one of the three paths below.
 
 ## Path A: Use an Existing Connected Wallet
 
-If the user already has a wallet available (e.g. a private key in an environment variable or config file), derive the account from it and proceed directly to [Fund the Wallet](#fund-the-wallet).
+If the user already has a wallet available (e.g. a private key in an environment variable or config file), proceed directly to [Fund the Wallet](#fund-the-wallet).
 
 ---
 
 ## Path B: Import an Existing Wallet
 
-The user provides their private key.
-
-### 1. Derive the account
-
-```typescript
-import { privateKeyToAccount } from "viem/accounts";
-
-const account = privateKeyToAccount("0x<user_private_key>" as `0x${string}`);
-
-const wallet = {
-  address: account.address,
-  privateKey: "0x<user_private_key>",
-};
-```
-
-### 2. Save to `wallet.json`
-
-Write the wallet object to `wallet.json`:
-
-```typescript
-import { writeFileSync } from "node:fs";
-
-writeFileSync("wallet.json", JSON.stringify(wallet, null, 2));
-```
-
-### 3. Add `wallet.json` to `.gitignore`
+Save the user's private key to a file and verify it:
 
 ```bash
-echo "wallet.json" >> .gitignore
+echo "0x<user_private_key>" > wallet-key.txt
+echo "wallet-key.txt" >> .gitignore
+
+npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
+```
+
+Output:
+
+```json
+{ "address": "0xYourChecksummedAddress" }
 ```
 
 Proceed to [Fund the Wallet](#fund-the-wallet).
@@ -57,42 +41,24 @@ Proceed to [Fund the Wallet](#fund-the-wallet).
 
 ## Path C: Create a New Wallet
 
-### 1. Generate a private key and derive the account
-
-```typescript
-import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-
-const privateKey = generatePrivateKey();
-const account = privateKeyToAccount(privateKey);
-
-const wallet = {
-  address: account.address,
-  privateKey: privateKey,
-};
-
-console.log(JSON.stringify(wallet, null, 2));
+```bash
+npx @alchemy/x402 wallet generate
 ```
 
-This outputs wallet JSON to stdout:
+Output:
 
 ```json
-{
-  "address": "0xYourChecksummedAddress",
-  "privateKey": "0x..."
-}
+{ "privateKey": "0x...", "address": "0xYourChecksummedAddress" }
 ```
 
-Save the output to `wallet.json`:
+Save the private key to a file for use with CLI commands:
 
 ```bash
-npx tsx create-wallet.ts > wallet.json
+npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
+echo "wallet-key.txt" >> .gitignore
 ```
 
-### 2. Add `wallet.json` to `.gitignore`
-
-```bash
-echo "wallet.json" >> .gitignore
-```
+> **Note:** Show the user their wallet address so they can fund it. Read it with `npx @alchemy/x402 wallet import --private-key ./wallet-key.txt`.
 
 Proceed to [Fund the Wallet](#fund-the-wallet).
 
@@ -113,18 +79,19 @@ The USDC will arrive at your address on Base Sepolia (`0x036CbD53842c5426634e792
 
 Transfer USDC to your wallet address on Base Mainnet.
 
-## Load the Wallet in Code
+## Using the Wallet in Code
+
+For building applications, use the `@alchemy/x402` library:
 
 ```typescript
-import { readFileSync } from "node:fs";
-import { privateKeyToAccount } from "viem/accounts";
+import { generateWallet, getWalletAddress } from "@alchemy/x402";
 
-const wallet = JSON.parse(readFileSync("wallet.json", "utf-8")) as {
-  address: string;
-  privateKey: `0x${string}`;
-};
+// Generate a new wallet
+const wallet = generateWallet();
+// { privateKey: "0x...", address: "0x..." }
 
-const account = privateKeyToAccount(wallet.privateKey);
+// Or derive address from an existing key
+const address = getWalletAddress("0x<your_private_key>");
 ```
 
-Use this `account` for SIWE token generation (see [authentication](authentication.md)) and payment signing (see [making-requests](making-requests.md)).
+Use the private key for SIWE token generation (see [authentication](authentication.md)) and payment signing (see [making-requests](making-requests.md)).

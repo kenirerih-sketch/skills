@@ -2,55 +2,65 @@
 
 When the gateway returns **402**, you must create an x402 payment and retry the request with a `Payment-Signature` header.
 
-## Extracting Payment Requirements from a 402 Response
+## CLI: Create a Payment
 
-Always decode the payment requirements from the **`PAYMENT-REQUIRED` response header** using `decodePaymentRequiredHeader()` from `@x402/core/http`:
+For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. Pass the path to a file containing the private key:
 
-```typescript
-import { decodePaymentRequiredHeader } from "@x402/core/http";
-
-const encoded = response.headers.get("PAYMENT-REQUIRED")!;
-const paymentRequired = decodePaymentRequiredHeader(encoded);
+```bash
+npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header value>'
 ```
 
-## Creating and Encoding the Payment
+This decodes the `PAYMENT-REQUIRED` header, creates a signed payment, and prints the encoded `Payment-Signature` value to stdout.
 
-```typescript
-import { x402Client } from "@x402/core/client";
-import {
-  decodePaymentRequiredHeader,
-  encodePaymentSignatureHeader,
-  x402HTTPClient,
-} from "@x402/core/http";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { privateKeyToAccount } from "viem/accounts";
+### Full 402 Handling with curl
 
-async function createPaymentFromResponse(
-  privateKey: `0x${string}`,
-  response: Response,
-): Promise<string> {
-  const account = privateKeyToAccount(privateKey);
+```bash
+TOKEN=$(cat siwe-token.txt)
 
-  // 1. Create x402 client and register the EVM "exact" payment scheme
-  const client = new x402Client();
-  registerExactEvmScheme(client, { signer: account });
-  const httpClient = new x402HTTPClient(client);
+# Save response headers and capture HTTP status code
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: SIWE $TOKEN" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
-  // 2. Decode payment requirements from the PAYMENT-REQUIRED header
-  const encoded = response.headers.get("PAYMENT-REQUIRED")!;
-  const paymentRequired = decodePaymentRequiredHeader(encoded);
+if [ "$HTTP_CODE" = "402" ]; then
+  # Extract the PAYMENT-REQUIRED header value
+  PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  // 3. Create the signed payment payload
-  const paymentPayload = await httpClient.createPaymentPayload(paymentRequired);
+  # Generate payment signature using the CLI
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
-  // 4. Encode as a header value
-  return encodePaymentSignatureHeader(paymentPayload);
-}
+  # Retry with payment
+  curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: SIWE $TOKEN" \
+    -H "Payment-Signature: $PAYMENT_SIG" \
+    -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
+else
+  cat response.json
+fi
 ```
 
-## Sending the Payment
+## Library: Create a Payment in Code
 
-Add the encoded payment as a `Payment-Signature` header on the retry request:
+For applications, use the `createPayment` function from `@alchemy/x402`:
+
+```bash
+npm install @alchemy/x402
+```
+
+```typescript
+import { createPayment } from "@alchemy/x402";
+
+const paymentSignature = await createPayment({
+  privateKey: "0x<your_private_key>",
+  paymentRequiredHeader: response.headers.get("PAYMENT-REQUIRED")!,
+});
+```
+
+Then retry the request with the `Payment-Signature` header:
 
 ```typescript
 const retryResponse = await fetch("https://x402.alchemy.com/eth-mainnet/v2", {
@@ -59,7 +69,7 @@ const retryResponse = await fetch("https://x402.alchemy.com/eth-mainnet/v2", {
     "Content-Type": "application/json",
     Accept: "application/json",
     Authorization: `SIWE ${token}`,
-    "Payment-Signature": paymentSignature, // from createPayment()
+    "Payment-Signature": paymentSignature,
   },
   body: JSON.stringify({
     id: 1,
@@ -74,18 +84,18 @@ const retryResponse = await fetch("https://x402.alchemy.com/eth-mainnet/v2", {
 - **Asset**: USDC (6 decimals)
 - **Scheme**: `exact` — uses EIP-3009 gasless `transferWithAuthorization`
 - **Amount**: Specified in the 402 response `accepts` array (USDC atomic units, 6 decimals)
-- **Signing**: The `@x402/evm` package signs an EIP-712 typed message authorizing the USDC transfer. No on-chain gas is needed from the payer.
+- **Signing**: The `@alchemy/x402` package signs an EIP-712 typed message authorizing the USDC transfer. No on-chain gas is needed from the payer.
 - **Settlement**: The gateway's facilitator (Coinbase CDP) submits the signed authorization on-chain.
 
 ## Selecting a Payment Option
 
-The 402 `accepts` array may contain multiple options (different networks). Pick one that matches a network where your wallet holds USDC:
+The 402 `accepts` array may contain multiple options (different networks). The CLI and `createPayment()` automatically select a compatible option. When using `buildX402Client` directly, you can pass a custom selector:
 
 ```typescript
-// Example: select the Base Mainnet option
-const option = paymentRequired.accepts.find(
-  (opt) => opt.network === "eip155:8453",
-);
+import { buildX402Client } from "@alchemy/x402";
+
+// buildX402Client returns an x402Client configured for Base Mainnet and Base Sepolia
+const client = buildX402Client("0x<your_private_key>");
 ```
 
 ## Payment Error Responses

@@ -21,7 +21,8 @@ A skill that lets agents easily access Alchemy's developer platform. The gateway
 - Fetching token prices via the Prices API
 - Setting up SIWE authentication for the gateway
 - Handling x402 payment flows (402 Payment Required)
-- Integrating with `@x402/fetch` or `@x402/axios` for automatic payment handling
+- Using `@alchemy/x402` CLI for ad-hoc wallet, auth, and payment operations
+- Integrating with `@alchemy/x402` library and `@x402/fetch` or `@x402/axios` for app development
 - Answering blockchain questions quickly using curl or bash
 - Looking up gateway endpoints, supported networks, or USDC addresses
 
@@ -36,11 +37,11 @@ A skill that lets agents easily access Alchemy's developer platform. The gateway
 
 ## Quick Start
 
-1. **Set up a wallet** — Use an existing wallet or generate a new one (see [wallet-bootstrap](rules/wallet-bootstrap.md))
+1. **Set up a wallet** — `npx @alchemy/x402 wallet generate` or use an existing one (see [wallet-bootstrap](rules/wallet-bootstrap.md))
 2. **Fund with USDC** — Load USDC on Base Mainnet (or Base Sepolia for testnet)
-3. **Create a SIWE token** — Sign a SIWE message to prove wallet ownership (see [authentication](rules/authentication.md))
+3. **Create a SIWE token** — `npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt` (see [authentication](rules/authentication.md))
 4. **Send requests** — Use `Authorization: SIWE <token>` header. For SDK auto-payment, see [making-requests](rules/making-requests.md). For quick curl queries, see [curl-workflow](rules/curl-workflow.md).
-5. **Handle 402** — If the gateway returns 402, create an x402 payment and retry (see [payment](rules/payment.md))
+5. **Handle 402** — `npx @alchemy/x402 pay` or use `createPayment()` in code (see [payment](rules/payment.md))
 
 ## Rules
 
