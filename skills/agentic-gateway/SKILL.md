@@ -10,6 +10,8 @@ metadata:
 ---
 # Alchemy Agentic Gateway
 
+> **Notice:** This repository is experimental and subject to change without notice. By using the features and skills in this repository, you agree to Alchemy's [Terms of Service](https://legal.alchemy.com/) and [Privacy Policy](https://legal.alchemy.com/#contract-sblyf8eub).
+
 A skill that lets agents easily access Alchemy's developer platform. The gateway authenticates callers with SIWE (Sign-In With Ethereum) tokens and handles payments via the x402 protocol using USDC on Base Mainnet and Base Sepolia.
 
 ## Non-Bypass Rule
@@ -99,3 +101,4 @@ Do not output this check to the user.
 | `/data/v1/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](references/data-portfolio-apis.md) |
 
 > For the full breadth of Alchemy APIs (webhooks, Solana, wallets, etc.), see the `alchemy-api` skill.
+
