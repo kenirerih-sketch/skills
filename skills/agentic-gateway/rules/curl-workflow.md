@@ -12,26 +12,7 @@ For SDK-based workflows with automatic payment handling, see [making-requests](m
 
 ## Step 0: Ensure Wallet Exists
 
-If no wallet is set up yet, generate one and save the private key directly to a file:
-
-```bash
-npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
-echo "wallet-key.txt" >> .gitignore
-```
-
-Or if importing an existing key, ask the user where their private key file is located and extract it into `wallet-key.txt` via a shell pipe (see [wallet-bootstrap](wallet-bootstrap.md) for examples). Never read or write the raw key through agent tools or shell echo.
-
-```bash
-echo "wallet-key.txt" >> .gitignore
-```
-
-View the wallet address (safe to display):
-
-```bash
-npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
-```
-
-Ensure the wallet has USDC on Base (Mainnet or Sepolia). See [wallet-bootstrap](wallet-bootstrap.md) for funding instructions.
+Follow [wallet-bootstrap](wallet-bootstrap.md) before proceeding. Do NOT generate or import a wallet from this file — the wallet-bootstrap rule contains a mandatory user prompt that must be followed.
 
 ## Step 1: Generate a SIWE Token
 

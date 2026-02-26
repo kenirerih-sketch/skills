@@ -62,7 +62,7 @@ If `route=gateway`, demo and public endpoints are disallowed.
 
 ## Quick Start
 
-1. **Set up a wallet** — `npx @alchemy/x402 wallet generate` or use an existing one (see [wallet-bootstrap](rules/wallet-bootstrap.md))
+1. **Set up a wallet** — Follow [wallet-bootstrap](rules/wallet-bootstrap.md). **This step requires asking the user before taking any action.** Do not generate or import a wallet without user confirmation.
 2. **Fund with USDC** — Load USDC on Base Mainnet (or Base Sepolia for testnet)
 3. **Create a SIWE token** — `npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt` (see [authentication](rules/authentication.md))
 4. **Send requests** — Use `Authorization: SIWE <token>` header. For SDK auto-payment, see [making-requests](rules/making-requests.md). For quick curl queries, see [curl-workflow](rules/curl-workflow.md).

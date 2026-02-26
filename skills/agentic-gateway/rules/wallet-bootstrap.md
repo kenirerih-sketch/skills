@@ -1,6 +1,6 @@
 # Wallet Setup
 
-Use this rule when the agent does not yet have access to an Ethereum wallet for signing.
+Use this rule **every time** the gateway flow needs a wallet — even if a wallet file (e.g. `wallet.json`, `wallet-key.txt`) already exists on disk. The agent must always confirm with the user which wallet to use before proceeding.
 
 ## Determine Wallet Source (Hard Requirement)
 
@@ -30,7 +30,7 @@ grep PRIVATE_KEY /path/to/.env | cut -d '=' -f2 > wallet-key.txt
 cp /path/to/keyfile wallet-key.txt
 ```
 
-> **Important:** Never read or write the raw private key through agent tools (Read, Write, Edit) or shell echo — both expose the key in their output. Always use shell pipes that write directly to a file.
+> **Important:** Never use agent tools (Read, Write, Edit) on ANY file that may contain a private key — including `wallet.json`, `wallet-key.txt`, `.env` files, or keystore exports. Always use shell pipes to move keys between files. Never echo or print key contents to stdout.
 
 Verify the imported key:
 
