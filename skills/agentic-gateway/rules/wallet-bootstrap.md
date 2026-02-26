@@ -2,13 +2,13 @@
 
 Use this rule when the agent does not yet have access to an Ethereum wallet for signing.
 
-## Determine Wallet Source
+## Determine Wallet Source (Hard Requirement)
 
-Ask the user:
+You MUST ask the user the following question before proceeding. Do not skip, assume, or infer the answer. Wait for an explicit response before taking any wallet action.
 
 > Do you have an existing Ethereum wallet you'd like to use, or should I create a new one?
 
-Based on the answer, follow one of the three paths below.
+Do not generate a wallet, import a key, or proceed to any other step until the user answers. Based on the answer, follow one of the three paths below.
 
 ---
 

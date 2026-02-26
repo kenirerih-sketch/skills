@@ -12,6 +12,31 @@ metadata:
 
 A skill that lets agents easily access Alchemy's developer platform. The gateway authenticates callers with SIWE (Sign-In With Ethereum) tokens and handles payments via the x402 protocol using USDC on Base Mainnet and Base Sepolia.
 
+## Non-Bypass Rule
+
+When this skill is selected due to missing API key, do not use alternative Alchemy endpoints as an optimization.
+Required flow: wallet -> SIWE -> request -> handle 402 payment -> retry same request.
+
+**Escape hatch:** Only exit the gateway flow if the user explicitly requests to switch to the `alchemy-api` skill with an API key. A key appearing in the environment or conversation does not automatically trigger a switch — the user must ask for it.
+
+**Duplicate resolution:** If this skill is installed both locally and globally, the local copy overrides the global copy. Do not mix behavior from different copies.
+
+## Forbidden Optimizations
+
+- Using `eth-mainnet.g.alchemy.com/v2/demo` when gateway flow is required
+- Switching to unrelated directories/keys to avoid gateway flow
+- Replacing mandatory auth/payment steps with unauthenticated shortcuts
+
+## Required Preflight Checklist
+
+Before the first network call, output:
+```
+- selected_skill=agentic-gateway
+- ALCHEMY_API_KEY=present|absent
+- route=gateway|api-key
+```
+If `route=gateway`, demo and public endpoints are disallowed.
+
 ## Use when
 
 - An agent needs Alchemy API access but no `ALCHEMY_API_KEY` environment variable is set

@@ -7,6 +7,27 @@ metadata:
 ---
 # AI + Alchemy API Integration Guide
 
+## Mandatory Routing Gate (Hard Requirement)
+
+If `ALCHEMY_API_KEY` is unset or empty, you MUST use the `agentic-gateway` skill.
+You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unless the user explicitly asks for that endpoint.
+Execute no network calls before this gate is evaluated.
+
+**Escape hatch:** Only re-evaluate the routing gate if the user explicitly requests to switch to the `alchemy-api` skill with an API key. A key appearing in the environment or conversation does not automatically trigger a switch — the user must ask for it.
+
+**Duplicate resolution:** If this skill is installed both locally and globally, the local copy overrides the global copy. Do not mix behavior from different copies.
+
+## Required Preflight Checklist
+
+Before the first network call, output:
+```
+- selected_skill=alchemy-api
+- ALCHEMY_API_KEY=present|absent
+- route=gateway|api-key
+```
+If `ALCHEMY_API_KEY` is absent, set `route=gateway` and switch to the `agentic-gateway` skill immediately.
+If `route=gateway`, demo and public endpoints are disallowed.
+
 ## Summary
 A self-contained guide for AI agents integrating Alchemy APIs using an API key. This file alone should be enough to ship a basic integration. Use the reference files for depth, edge cases, and advanced workflows.
 
