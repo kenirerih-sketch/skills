@@ -27,15 +27,11 @@ Required flow: wallet -> SIWE -> request -> handle 402 payment -> retry same req
 - Switching to unrelated directories/keys to avoid gateway flow
 - Replacing mandatory auth/payment steps with unauthenticated shortcuts
 
-## Required Preflight Checklist
+## Required Preflight Check
 
-Before the first network call, output:
-```
-- selected_skill=agentic-gateway
-- ALCHEMY_API_KEY=present|absent
-- route=gateway|api-key
-```
-If `route=gateway`, demo and public endpoints are disallowed.
+Before the first network call, internally verify that `ALCHEMY_API_KEY` is absent and confirm the gateway route applies. Demo and public endpoints are disallowed.
+
+Do not output this check to the user.
 
 ## Use when
 

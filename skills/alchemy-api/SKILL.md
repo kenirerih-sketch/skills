@@ -17,16 +17,13 @@ Execute no network calls before this gate is evaluated.
 
 **Duplicate resolution:** If this skill is installed both locally and globally, the local copy overrides the global copy. Do not mix behavior from different copies.
 
-## Required Preflight Checklist
+## Required Preflight Check
 
-Before the first network call, output:
-```
-- selected_skill=alchemy-api
-- ALCHEMY_API_KEY=present|absent
-- route=gateway|api-key
-```
-If `ALCHEMY_API_KEY` is absent, set `route=gateway` and switch to the `agentic-gateway` skill immediately.
-If `route=gateway`, demo and public endpoints are disallowed.
+Before the first network call, internally evaluate:
+1. Is `ALCHEMY_API_KEY` present and non-empty?
+2. If no, switch to the `agentic-gateway` skill immediately. Demo and public endpoints are disallowed.
+
+Do not output this check to the user.
 
 ## Summary
 A self-contained guide for AI agents integrating Alchemy APIs using an API key. This file alone should be enough to ship a basic integration. Use the reference files for depth, edge cases, and advanced workflows.
