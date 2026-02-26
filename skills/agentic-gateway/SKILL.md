@@ -29,9 +29,19 @@ Required flow: wallet -> SIWE -> request -> handle 402 payment -> retry same req
 
 ## Required Preflight Check
 
-Before the first network call, internally verify that `ALCHEMY_API_KEY` is absent and confirm the gateway route applies. Demo and public endpoints are disallowed.
+Before the first network call, internally evaluate:
+1. Is `ALCHEMY_API_KEY` absent? If no, this skill does not apply.
+2. Is a wallet confirmed with the user? If no, set `wallet=pending`.
+
+If the gateway route applies, demo and public endpoints are disallowed.
+If `wallet=pending`, you MUST follow [wallet-bootstrap](rules/wallet-bootstrap.md) and wait for user confirmation before proceeding. Do not read wallet files or generate keys.
 
 Do not output this check to the user.
+
+## Hard Requirements
+
+- NEVER use Read, Write, or Edit tools on files that may contain private keys (`wallet.json`, `wallet-key.txt`, `.env`)
+- ALWAYS ask the user about wallet choice before proceeding — see [wallet-bootstrap](rules/wallet-bootstrap.md)
 
 ## Use when
 
@@ -58,7 +68,7 @@ Do not output this check to the user.
 
 ## Quick Start
 
-1. **Set up a wallet** — Follow [wallet-bootstrap](rules/wallet-bootstrap.md). **This step requires asking the user before taking any action.** Do not generate or import a wallet without user confirmation.
+1. **Set up a wallet** — BLOCKING: Ask the user before proceeding. Do not read existing wallet files. See [wallet-bootstrap](rules/wallet-bootstrap.md).
 2. **Fund with USDC** — Load USDC on Base Mainnet (or Base Sepolia for testnet)
 3. **Create a SIWE token** — `npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt` (see [authentication](rules/authentication.md))
 4. **Send requests** — Use `Authorization: SIWE <token>` header. For SDK auto-payment, see [making-requests](rules/making-requests.md). For quick curl queries, see [curl-workflow](rules/curl-workflow.md).
