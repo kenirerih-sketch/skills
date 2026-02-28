@@ -1,9 +1,8 @@
 ---
 name: agentic-gateway
-description: |
-  Use when an agent wants to access Alchemy APIs without an API key. This is the
-  default path when $ALCHEMY_API_KEY is not set. Covers SIWE authentication,
-  x402 payment flows, wallet setup, and gateway endpoints.
+description: Lets agents access Alchemy APIs without an API key using wallet-based SIWE authentication and x402 USDC payments. Default path when $ALCHEMY_API_KEY is not set. Use when user asks to query blockchain data, check token balances, look up NFTs, fetch prices, or call Alchemy APIs without an API key, or mentions "SIWE", "x402", "agentic gateway", or "wallet-based auth".
+license: MIT
+compatibility: Requires network access, Node.js (npx), and an Ethereum wallet funded with USDC on Base. Works across Claude.ai, Claude Code, and API.
 metadata:
   author: alchemyplatform
   version: "1.0"
@@ -101,4 +100,23 @@ Do not output this check to the user.
 | `/data/v1/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](references/data-portfolio-apis.md) |
 
 > For the full breadth of Alchemy APIs (webhooks, Solana, wallets, etc.), see the `alchemy-api` skill.
+
+## Troubleshooting
+
+### 401 Unauthorized
+- `MISSING_AUTH`: Add `Authorization: SIWE <token>` header to your request
+- `MESSAGE_EXPIRED`: Regenerate token with `npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt`
+- `INVALID_SIGNATURE` or `INVALID_DOMAIN`: Check that the SIWE message uses domain `x402.alchemy.com` and chainId `8453`
+- See [authentication](rules/authentication.md) for the full list of auth error codes
+
+### 402 Payment Required
+- This is expected on first use. Run `npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header>'`
+- Ensure your wallet has sufficient USDC on Base Mainnet (or Base Sepolia for testnet)
+- After payment, subsequent requests with the same SIWE token return 200
+- See [payment](rules/payment.md) for manual payment creation
+
+### Wallet setup issues
+- Never read or write wallet key files with Read/Write/Edit tools
+- Always ask the user about wallet choice before proceeding
+- See [wallet-bootstrap](rules/wallet-bootstrap.md) for the three wallet setup paths
 
