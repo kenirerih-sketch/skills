@@ -1,14 +1,21 @@
 # Wallet Setup
 
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, the questions below will establish it.
+
 Use this rule **every time** the gateway flow needs a wallet — even if a wallet file (e.g. `wallet.json`, `wallet-key.txt`) already exists on disk. The agent must always confirm with the user which wallet to use before proceeding.
 
-## Determine Wallet Source (Hard Requirement)
+## Determine Network and Wallet Source (Hard Requirement)
 
-You MUST ask the user the following question before proceeding. Do not skip, assume, or infer the answer. Wait for an explicit response before taking any wallet action.
+You MUST ask the user the following questions before proceeding. Do not skip, assume, or infer the answers. Wait for explicit responses before taking any wallet action.
 
-> Do you have an existing Ethereum wallet you'd like to use, or should I create a new one?
+> 1. Which network type will you be using — **EVM** (Ethereum, Base, Polygon, etc.) or **Solana**?
+> 2. Do you have an existing wallet you'd like to use, or should I create a new one?
 
-Do not generate a wallet, import a key, or proceed to any other step until the user answers. Based on the answer, follow one of the three paths below.
+Do not generate a wallet, import a key, or proceed to any other step until the user answers.
+
+**Record the user's choice:** Once the user answers, their network type (`NETWORK_TYPE = evm` or `NETWORK_TYPE = svm`) is locked for the entire session. All subsequent commands, code, and instructions use ONLY the chosen network's path. Do not present the other network's instructions unless the user explicitly asks to switch.
+
+Based on the answer, follow one of the three paths below — using ONLY the section matching the user's `NETWORK_TYPE`.
 
 ---
 
@@ -34,14 +41,28 @@ cp /path/to/keyfile wallet-key.txt
 
 Verify the imported key:
 
+### EVM Path
+
 ```bash
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
 Output:
-
 ```json
 { "address": "0xYourChecksummedAddress" }
+```
+
+### Solana Path
+
+```bash
+npx @alchemy/x402 wallet import --network svm --private-key ./wallet-key.txt
+```
+
+> **Note:** Solana private keys can be in base58 format or JSON array format (e.g. from Solana CLI's `id.json`). Both are supported.
+
+Output:
+```json
+{ "address": "YourBase58SolanaAddress" }
 ```
 
 Add the key file to `.gitignore`:
@@ -58,6 +79,8 @@ Proceed to [Fund the Wallet](#fund-the-wallet).
 
 Generate a wallet and pipe the private key directly to a file so it never appears on screen:
 
+### EVM Path
+
 ```bash
 npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
@@ -69,6 +92,19 @@ Retrieve the wallet address (safe to display):
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
+### Solana Path
+
+```bash
+npx @alchemy/x402 wallet generate --network svm | jq -r .privateKey > wallet-key.txt
+echo "wallet-key.txt" >> .gitignore
+```
+
+Retrieve the wallet address (safe to display):
+
+```bash
+npx @alchemy/x402 wallet import --network svm --private-key ./wallet-key.txt
+```
+
 > **Important:** Never run `wallet generate` without piping to a file — it prints the private key to stdout.
 
 Proceed to [Fund the Wallet](#fund-the-wallet).
@@ -77,7 +113,9 @@ Proceed to [Fund the Wallet](#fund-the-wallet).
 
 ## Fund the Wallet
 
-### Testnet (Base Sepolia)
+### EVM Wallets
+
+#### Testnet (Base Sepolia)
 
 1. Go to the [Circle USDC faucet](https://faucet.circle.com/)
 2. Select **Base Sepolia**
@@ -86,13 +124,28 @@ Proceed to [Fund the Wallet](#fund-the-wallet).
 
 The USDC will arrive at your address on Base Sepolia (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`).
 
-### Mainnet
+#### Mainnet
 
 Transfer USDC to your wallet address on Base Mainnet.
+
+### Solana Wallets
+
+#### Devnet
+
+1. Go to the [Circle USDC faucet](https://faucet.circle.com/)
+2. Select **Solana Devnet**
+3. Paste your Solana wallet address
+4. Request testnet USDC
+
+#### Mainnet
+
+Transfer USDC to your wallet address on Solana Mainnet.
 
 ## Using the Wallet in Code
 
 For building applications, use the `@alchemy/x402` library. Always read the private key from an environment variable — never hardcode it in source files:
+
+### EVM Path
 
 ```typescript
 import { generateWallet, getWalletAddress } from "@alchemy/x402";
@@ -106,4 +159,18 @@ const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 const address = getWalletAddress(privateKey);
 ```
 
-Use the private key for SIWE token generation (see [authentication](authentication.md)) and payment signing (see [making-requests](making-requests.md)).
+### Solana Path
+
+```typescript
+import { generateSolanaWallet, getSolanaWalletAddress } from "@alchemy/x402";
+
+// Generate a new Solana wallet (save privateKey to a secure location)
+const wallet = generateSolanaWallet();
+// wallet.address → "Base58SolanaAddress"
+
+// Or derive address from an existing key
+const privateKey = process.env.PRIVATE_KEY as string; // base58-encoded
+const address = getSolanaWalletAddress(privateKey);
+```
+
+Use the private key for auth token generation (see [authentication](authentication.md)) and payment signing (see [making-requests](making-requests.md)).

@@ -1,6 +1,8 @@
 # Curl Workflow
 
-A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same SIWE auth and payment flow.
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, stop and ask the user before proceeding.
+
+A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same auth and payment flow.
 
 ## When to Use
 
@@ -14,19 +16,23 @@ For SDK-based workflows with automatic payment handling, see [making-requests](m
 
 Follow [wallet-bootstrap](wallet-bootstrap.md) before proceeding. Do NOT generate or import a wallet from this file — the wallet-bootstrap rule contains a mandatory user prompt that must be followed.
 
-## Step 1: Generate a SIWE Token
+## Step 1: Generate an Auth Token
+
+### EVM Path
 
 ```bash
-npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt > siwe-token.txt
-```
-
-For subsequent requests, read from the cached file:
-
-```bash
+npx @alchemy/x402 sign --private-key ./wallet-key.txt > siwe-token.txt
 TOKEN=$(cat siwe-token.txt)
 ```
 
-> **Important:** SIWE tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add `siwe-token.txt` to `.gitignore`.
+### Solana Path
+
+```bash
+npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt > siws-token.txt
+TOKEN=$(cat siws-token.txt)
+```
+
+> **Important:** Auth tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add token files to `.gitignore`.
 
 ## Step 2: Make API Calls with curl
 
@@ -36,7 +42,7 @@ All gateway endpoints share the same base URL (`https://x402.alchemy.com`) and a
 
 ### Node JSON-RPC (`/:chainNetwork/v2`)
 
-#### Get the Latest Block Number
+#### Get the Latest Block Number (EVM)
 
 ```bash
 TOKEN=$(cat siwe-token.txt)
@@ -46,6 +52,18 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Accept: application/json" \
   -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
+```
+
+#### Get the Latest Slot (Solana)
+
+```bash
+TOKEN=$(cat siws-token.txt)
+
+curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: SIWS $TOKEN" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}'
 ```
 
 #### Get ETH Balance for an Address
@@ -58,6 +76,18 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Accept: application/json" \
   -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_getBalance","params":["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","latest"]}'
+```
+
+#### Get SOL Balance for an Address
+
+```bash
+TOKEN=$(cat siws-token.txt)
+
+curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: SIWS $TOKEN" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"getBalance","params":["83astBRguLMdt2h5U1Tbd2hpAXRC8gZDjX6BY1BV9Nc7"]}'
 ```
 
 #### Read a Contract (e.g. USDC `balanceOf`)
@@ -109,6 +139,8 @@ curl -s -G "https://x402.alchemy.com/prices/v1/tokens/by-symbol" \
   -H "Authorization: SIWE $TOKEN"
 ```
 
+> **Note:** Prices and Portfolio APIs are not chain-specific. Either a SIWE or SIWS token can be used for authentication.
+
 ---
 
 ### Portfolio API (`/data/v1/assets/*`)
@@ -127,8 +159,9 @@ curl -s -X POST "https://x402.alchemy.com/data/v1/assets/tokens/by-address" \
 
 ## Step 3: Handle 402 Payment Required
 
-If curl returns HTTP 402, the gateway requires a one-time USDC payment for this SIWE token. Extract the `PAYMENT-REQUIRED` header and use the CLI to create a payment:
+If curl returns HTTP 402, the gateway requires a one-time USDC payment for this auth token. Extract the `PAYMENT-REQUIRED` header and use the CLI to create a payment:
 
+### EVM Path
 ```bash
 TOKEN=$(cat siwe-token.txt)
 
@@ -158,16 +191,54 @@ else
 fi
 ```
 
+### Solana Path
+
+```bash
+TOKEN=$(cat siws-token.txt)
+
+# Save response headers and capture HTTP status code
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: SIWS $TOKEN" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}')
+
+if [ "$HTTP_CODE" = "402" ]; then
+  PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
+
+  # Note: --network svm for Solana payments
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --network svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+
+  curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -H "Authorization: SIWS $TOKEN" \
+    -H "Payment-Signature: $PAYMENT_SIG" \
+    -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}'
+else
+  cat response.json
+fi
+```
+
 For more details on the payment flow, see [payment](payment.md).
 
-**Note:** After a successful payment, subsequent requests using the same SIWE token will return 200 without requiring payment again.
+**Note:** After a successful payment, subsequent requests using the same auth token will return 200 without requiring payment again.
 
 ## Step 4: Handle 401 MESSAGE_EXPIRED
 
-If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the SIWE token has expired. Regenerate it:
+If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the auth token has expired. Regenerate it:
+
+### EVM Path
 
 ```bash
-npx @alchemy/x402 sign-siwe --private-key ./wallet-key.txt > siwe-token.txt
+npx @alchemy/x402 sign --private-key ./wallet-key.txt > siwe-token.txt
+# Retry the request with the new token
+```
+
+### Solana Path
+
+```bash
+npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt > siws-token.txt
 # Retry the request with the new token
 ```
 
