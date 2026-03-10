@@ -2,7 +2,7 @@
 
 The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform, authenticating with SIWE (EVM wallet) or SIWS (Solana wallet) and paying per-request with USDC via the x402 protocol.
 
-> **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL.
+> **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried (e.g. "Since we're querying Ethereum, we'll use EVM" is wrong). Always ask the user which wallet type they prefer without reference to the query chain.
 
 ## Base URL
 
@@ -23,7 +23,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 
 ## End-to-End Flow
 
-1. **Set up a wallet** — Use an existing wallet or generate a new one. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --architecture svm`.
+1. **Set up a wallet (REQUIRED — must complete before any data request)** — Ask the user to either create a new wallet or provide an existing private key. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --architecture svm`. See [wallet-bootstrap](wallet-bootstrap.md).
 2. **Fund the wallet** — Load USDC on a supported payment network (Base for EVM wallets, Solana for SVM wallets).
 3. **Create an auth token** — EVM: `npx @alchemy/x402 sign --private-key ./wallet-key.txt` or `signSiwe()` in code; Solana: `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` or `signSiws()` in code.
 4. **Send a request** — Call any gateway route with your auth token (`Authorization: SIWE <token>` for EVM wallets, `Authorization: SIWS <token>` for Solana wallets). The chain in the URL is independent of your wallet type. For quick queries without an npm project, see the [curl-workflow](curl-workflow.md) for a lightweight curl-based alternative.

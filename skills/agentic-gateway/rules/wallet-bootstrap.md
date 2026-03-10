@@ -2,14 +2,27 @@
 
 Use this rule **every time** the gateway flow needs a wallet — even if a wallet file (e.g. `wallet.json`, `wallet-key.txt`) already exists on disk. The agent must always confirm with the user which wallet to use before proceeding.
 
+**This is the mandatory entry point for all blockchain data requests.** No data can be fetched until wallet setup is complete. If the user asks a blockchain question and no wallet is configured, redirect them here first.
+
 ## Determine Wallet Type and Source (Hard Requirement)
 
-You MUST ask the user the following questions before proceeding. Do not skip, assume, or infer the answers. Wait for explicit responses before taking any wallet action.
+You MUST ask the user the following two questions before proceeding. Do not skip, assume, or infer the answers. Wait for explicit responses before taking any wallet action.
 
 > 1. What type of wallet do you have — **EVM** (Ethereum, Base, Polygon, etc.) or **Solana**?
-> 2. Do you have an existing wallet you'd like to use, or should I create a new one?
+> 2. Would you like to **create a new wallet** or **provide an existing private key**?
 
-**Do NOT assume EVM.** Even if the user is querying an EVM chain (e.g. `eth-mainnet`), they may prefer a Solana wallet — wallet type determines auth and payment method only, not which chains can be queried. A user with any wallet type can query any supported chain. Always present both EVM and Solana as equal options.
+**Do NOT assume EVM.** Wallet type determines auth and payment method ONLY — it has absolutely nothing to do with which chains can be queried. A Solana wallet can query Ethereum, and an EVM wallet can query Solana. Always present both EVM and Solana as equal options.
+
+### Anti-pattern: DO NOT do this
+
+NEVER use the query chain to justify, suggest, or default to a wallet type. The following are **all wrong**:
+
+- "Since we're querying Ethereum, we'll create an EVM wallet" — **WRONG**
+- "You're looking up Solana data, so let's set up a Solana wallet" — **WRONG**
+- "For this ETH mainnet query, an EVM wallet makes sense" — **WRONG**
+- Skipping the wallet type question because the query chain "implies" the answer — **WRONG**
+
+The query chain and the wallet type are **completely independent choices**. Never correlate them in your reasoning or your response to the user.
 
 Do not generate a wallet, import a key, or proceed to any other step until the user answers.
 
