@@ -20,7 +20,7 @@ Authorization: SIWS <base64(siws_message)>.<base58_signature>
 
 ## CLI: Generate an Auth Token
 
-For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. The `sign` command (alias: `sign-siwe`) supports both EVM and Solana via the `--network` flag:
+For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. The `sign` command (alias: `sign-siwe`) supports both EVM and Solana via the `--architecture` flag:
 
 ### EVM Path
 
@@ -31,7 +31,7 @@ npx @alchemy/x402 sign --private-key ./wallet-key.txt
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt
+npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt
 ```
 
 Options:
@@ -39,7 +39,7 @@ Options:
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--private-key <key>` | (required) | Path to a key file (recommended), hex private key (EVM), or base58 private key (Solana) |
-| `--network <type>` | `evm` | Network type: `evm` or `svm` |
+| `--architecture <type>` | `evm` | VM architecture: `evm` or `svm` |
 | `--expires-after <duration>` | `1h` | Token lifetime (e.g. `30m`, `2h`, `7d`) |
 
 > **Security:** Always pass a file path rather than a raw key to avoid exposing the private key in shell history and process listings.
@@ -61,7 +61,7 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt > siws-token.txt
+npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt > siws-token.txt
 TOKEN=$(cat siws-token.txt)
 
 curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \

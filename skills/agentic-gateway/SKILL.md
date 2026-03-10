@@ -78,7 +78,7 @@ Do not output this check to the user.
    - **Solana**: Load USDC on Solana (Mainnet or Devnet)
 3. **Create an auth token**:
    - **EVM**: `npx @alchemy/x402 sign --private-key ./wallet-key.txt` → save to `siwe-token.txt`
-   - **Solana**: `npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt` → save to `siws-token.txt`
+   - **Solana**: `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` → save to `siws-token.txt`
    - See [authentication](rules/authentication.md)
 4. **Send requests**:
    - **EVM**: Use `Authorization: SIWE <token>` header
@@ -86,7 +86,7 @@ Do not output this check to the user.
    - For SDK auto-payment, see [making-requests](rules/making-requests.md). For quick curl queries, see [curl-workflow](rules/curl-workflow.md).
 5. **Handle 402**:
    - **EVM**: `npx @alchemy/x402 pay ...` or `createPayment()` in code
-   - **Solana**: `npx @alchemy/x402 pay --network svm ...` or `createSolanaPayment()` in code
+   - **Solana**: `npx @alchemy/x402 pay --architecture svm ...` or `createSolanaPayment()` in code
    - See [payment](rules/payment.md)
 
 ## EVM vs Solana Cheat Sheet
@@ -97,10 +97,10 @@ Once `NETWORK_TYPE` is set, use this table to pick the correct variant for every
 |--------|-----|--------------|
 | Auth scheme | SIWE | SIWS |
 | Auth header | `Authorization: SIWE <token>` | `Authorization: SIWS <token>` |
-| Sign command | `npx @alchemy/x402 sign --private-key ./wallet-key.txt` | `npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt` |
+| Sign command | `npx @alchemy/x402 sign --private-key ./wallet-key.txt` | `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` |
 | Token file | `siwe-token.txt` | `siws-token.txt` |
-| Pay command | `npx @alchemy/x402 pay ...` | `npx @alchemy/x402 pay --network svm ...` |
-| Wallet generate | `npx @alchemy/x402 wallet generate` | `npx @alchemy/x402 wallet generate --network svm` |
+| Pay command | `npx @alchemy/x402 pay ...` | `npx @alchemy/x402 pay --architecture svm ...` |
+| Wallet generate | `npx @alchemy/x402 wallet generate` | `npx @alchemy/x402 wallet generate --architecture svm` |
 | Payment network | Base (USDC) | Solana (USDC) |
 | Library functions | `signSiwe`, `createPayment`, `buildX402Client` | `signSiws`, `createSolanaPayment`, `buildSolanaX402Client` |
 | Chain slugs | `eth-mainnet`, `base-mainnet`, etc. | `solana-mainnet`, `solana-devnet` |
@@ -135,12 +135,12 @@ Once `NETWORK_TYPE` is set, use this table to pick the correct variant for every
 
 ### 401 Unauthorized
 - `MISSING_AUTH`: Add `Authorization: SIWE <token>` (EVM) or `Authorization: SIWS <token>` (Solana) header to your request
-- `MESSAGE_EXPIRED`: Regenerate token with `npx @alchemy/x402 sign --private-key ./wallet-key.txt` (add `--network svm` for Solana)
+- `MESSAGE_EXPIRED`: Regenerate token with `npx @alchemy/x402 sign --private-key ./wallet-key.txt` (add `--architecture svm` for Solana)
 - `INVALID_SIGNATURE` or `INVALID_DOMAIN`: Check that the message uses domain `x402.alchemy.com`
 - See [authentication](rules/authentication.md) for the full list of auth error codes
 
 ### 402 Payment Required
-- This is expected on first use. Run `npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header>'` (add `--network svm` for Solana)
+- This is expected on first use. Run `npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header>'` (add `--architecture svm` for Solana)
 - Ensure your wallet has sufficient USDC on the appropriate payment network
 - After payment, subsequent requests with the same SIWE token return 200
 - See [payment](rules/payment.md) for manual payment creation

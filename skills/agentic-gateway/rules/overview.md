@@ -23,11 +23,11 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 
 ## End-to-End Flow
 
-1. **Set up a wallet** — Use an existing wallet or generate a new one. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --network svm`.
+1. **Set up a wallet** — Use an existing wallet or generate a new one. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --architecture svm`.
 2. **Fund the wallet** — Load USDC on a supported payment network (Base for EVM wallets, Solana for SVM wallets).
-3. **Create an auth token** — EVM: `npx @alchemy/x402 sign --private-key ./wallet-key.txt` or `signSiwe()` in code; Solana: `npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt` or `signSiws()` in code.
+3. **Create an auth token** — EVM: `npx @alchemy/x402 sign --private-key ./wallet-key.txt` or `signSiwe()` in code; Solana: `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` or `signSiws()` in code.
 4. **Send a request** — Call any gateway route with `Authorization: SIWE <token>` (EVM) or `Authorization: SIWS <token>` (Solana). For quick queries without an npm project, see the [curl-workflow](curl-workflow.md) for a lightweight curl-based alternative.
-5. **Handle 402 Payment Required** — If the gateway returns 402, create an x402 payment with `npx @alchemy/x402 pay` (add `--network svm` for Solana) or `createPayment()` / `createSolanaPayment()` and retry with a `Payment-Signature` header.
+5. **Handle 402 Payment Required** — If the gateway returns 402, create an x402 payment with `npx @alchemy/x402 pay` (add `--architecture svm` for Solana) or `createPayment()` / `createSolanaPayment()` and retry with a `Payment-Signature` header.
 6. **Receive the result** — After payment, the gateway proxies the request to Alchemy and returns the result. Subsequent requests with the same auth token do not require payment again.
 
 ## Packages
@@ -43,13 +43,13 @@ Provides both CLI commands and library utilities for wallet management, SIWE/SIW
 | CLI command | Library function | Purpose |
 |-------------|-----------------|---------|
 | `npx @alchemy/x402 wallet generate` | `generateWallet()` | Create a new EVM wallet |
-| `npx @alchemy/x402 wallet generate --network svm` | `generateSolanaWallet()` | Create a new Solana wallet |
+| `npx @alchemy/x402 wallet generate --architecture svm` | `generateSolanaWallet()` | Create a new Solana wallet |
 | `npx @alchemy/x402 wallet import` | `getWalletAddress()` | Import / verify an EVM wallet |
-| `npx @alchemy/x402 wallet import --network svm` | `getSolanaWalletAddress()` | Import / verify a Solana wallet |
+| `npx @alchemy/x402 wallet import --architecture svm` | `getSolanaWalletAddress()` | Import / verify a Solana wallet |
 | `npx @alchemy/x402 sign --private-key <key>` | `signSiwe()` | Generate a SIWE auth token (EVM) |
-| `npx @alchemy/x402 sign --network svm --private-key <key>` | `signSiws()` | Generate a SIWS auth token (Solana) |
+| `npx @alchemy/x402 sign --architecture svm --private-key <key>` | `signSiws()` | Generate a SIWS auth token (Solana) |
 | `npx @alchemy/x402 pay` | `createPayment()` | Create an EVM x402 payment from a 402 response |
-| `npx @alchemy/x402 pay --network svm` | `createSolanaPayment()` | Create a Solana x402 payment from a 402 response |
+| `npx @alchemy/x402 pay --architecture svm` | `createSolanaPayment()` | Create a Solana x402 payment from a 402 response |
 | — | `buildX402Client()` | Create an EVM x402 client for use with `@x402/fetch` or `@x402/axios` |
 | — | `buildSolanaX402Client()` | Create a Solana x402 client for use with `@x402/fetch` or `@x402/axios` |
 

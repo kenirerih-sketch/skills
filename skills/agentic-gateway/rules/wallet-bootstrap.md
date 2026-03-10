@@ -55,7 +55,7 @@ Output:
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 wallet import --network svm --private-key ./wallet-key.txt
+npx @alchemy/x402 wallet import --architecture svm --private-key ./wallet-key.txt
 ```
 
 > **Note:** Solana private keys can be in base58 format or JSON array format (e.g. from Solana CLI's `id.json`). Both are supported.
@@ -95,14 +95,14 @@ npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 wallet generate --network svm | jq -r .privateKey > wallet-key.txt
+npx @alchemy/x402 wallet generate --architecture svm | jq -r .privateKey > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
 ```
 
 Retrieve the wallet address (safe to display):
 
 ```bash
-npx @alchemy/x402 wallet import --network svm --private-key ./wallet-key.txt
+npx @alchemy/x402 wallet import --architecture svm --private-key ./wallet-key.txt
 ```
 
 > **Important:** Never run `wallet generate` without piping to a file — it prints the private key to stdout.

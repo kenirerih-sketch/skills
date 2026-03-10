@@ -17,7 +17,7 @@ npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMEN
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 pay --network svm --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header value>'
+npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header value>'
 ```
 
 This decodes the `PAYMENT-REQUIRED` header, creates a signed payment, and prints the encoded `Payment-Signature` value to stdout.
@@ -69,8 +69,8 @@ if [ "$HTTP_CODE" = "402" ]; then
   # Extract the PAYMENT-REQUIRED header value
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Generate payment signature using the CLI (note --network svm)
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --network svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  # Generate payment signature using the CLI (note --architecture svm)
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
   # Retry with payment
   curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \

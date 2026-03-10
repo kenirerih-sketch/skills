@@ -28,7 +28,7 @@ TOKEN=$(cat siwe-token.txt)
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt > siws-token.txt
+npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt > siws-token.txt
 TOKEN=$(cat siws-token.txt)
 ```
 
@@ -206,8 +206,8 @@ HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "h
 if [ "$HTTP_CODE" = "402" ]; then
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Note: --network svm for Solana payments
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --network svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  # Note: --architecture svm for Solana payments
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
   curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
     -H "Content-Type: application/json" \
@@ -238,7 +238,7 @@ npx @alchemy/x402 sign --private-key ./wallet-key.txt > siwe-token.txt
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 sign --network svm --private-key ./wallet-key.txt > siws-token.txt
+npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt > siws-token.txt
 # Retry the request with the new token
 ```
 
