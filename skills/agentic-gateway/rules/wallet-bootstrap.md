@@ -1,21 +1,21 @@
 # Wallet Setup
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, the questions below will establish it.
-
 Use this rule **every time** the gateway flow needs a wallet — even if a wallet file (e.g. `wallet.json`, `wallet-key.txt`) already exists on disk. The agent must always confirm with the user which wallet to use before proceeding.
 
-## Determine Architecture and Wallet Source (Hard Requirement)
+## Determine Wallet Type and Source (Hard Requirement)
 
 You MUST ask the user the following questions before proceeding. Do not skip, assume, or infer the answers. Wait for explicit responses before taking any wallet action.
 
-> 1. Which architecture will you be using — **EVM** (Ethereum, Base, Polygon, etc.) or **Solana**?
+> 1. What type of wallet do you have — **EVM** (Ethereum, Base, Polygon, etc.) or **Solana**?
 > 2. Do you have an existing wallet you'd like to use, or should I create a new one?
+
+**Do NOT assume EVM.** Even if the user is querying an EVM chain (e.g. `eth-mainnet`), they may prefer a Solana wallet — wallet type determines auth and payment method only, not which chains can be queried. A user with any wallet type can query any supported chain. Always present both EVM and Solana as equal options.
 
 Do not generate a wallet, import a key, or proceed to any other step until the user answers.
 
-**Record the user's choice:** Once the user answers, their architecture (`ARCHITECTURE = evm` or `ARCHITECTURE = svm`) is locked for the entire session. All subsequent commands, code, and instructions use ONLY the chosen architecture's path. Do not present the other architecture's instructions unless the user explicitly asks to switch.
+**Record the user's choice:** Once the user answers, set `ARCHITECTURE = evm` or `ARCHITECTURE = svm`. Use the matching wallet path for auth token generation, payment signing, and wallet management commands.
 
-Based on the answer, follow one of the three paths below — using ONLY the section matching the user's `ARCHITECTURE`.
+Based on the answer, follow one of the three paths below.
 
 ---
 

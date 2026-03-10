@@ -1,8 +1,6 @@
 # Authentication
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
-
-Every request to the gateway must include an `Authorization` header with a SIWE (EVM) or SIWS (Solana) token. The token proves wallet ownership without transmitting the private key.
+Every request to the gateway must include an `Authorization` header with a SIWE or SIWS token. The token type depends on your wallet type (EVM → SIWE, Solana → SIWS), but either token type can authenticate against any supported chain. The token proves wallet ownership without transmitting the private key.
 
 ## Token Format
 
@@ -52,6 +50,7 @@ The command prints the encoded token to stdout. Pipe it to a file to avoid termi
 npx @alchemy/x402 sign --private-key ./wallet-key.txt > siwe-token.txt
 TOKEN=$(cat siwe-token.txt)
 
+# The chain URL is independent of wallet type — you can query any chain
 curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Authorization: SIWE $TOKEN" \
   -H "Content-Type: application/json" \
@@ -64,6 +63,7 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
 npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt > siws-token.txt
 TOKEN=$(cat siws-token.txt)
 
+# A SIWS token also works with EVM chain URLs (e.g. eth-mainnet)
 curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
   -H "Authorization: SIWS $TOKEN" \
   -H "Content-Type: application/json" \

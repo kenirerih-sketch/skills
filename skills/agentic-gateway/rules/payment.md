@@ -1,8 +1,6 @@
 # Manual x402 Payment
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
-
-When the gateway returns **402**, you must create an x402 payment and retry the request with a `Payment-Signature` header.
+When the gateway returns **402**, you must create an x402 payment and retry the request with a `Payment-Signature` header. The payment method depends on your wallet type (EVM or Solana), not the chain being queried.
 
 ## CLI: Create a Payment
 
@@ -11,38 +9,41 @@ For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. Pass the pa
 ### EVM Path
 
 ```bash
-npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header value>'
+PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
+npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)"
 ```
 
 ### Solana Path
 
 ```bash
-npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header value>'
+PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
+npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)"
 ```
 
-This decodes the `PAYMENT-REQUIRED` header, creates a signed payment, and prints the encoded `Payment-Signature` value to stdout.
+The `--payment-required` flag expects a **base64-encoded** value. Always pipe the raw header through `base64` before passing it. The command creates a signed payment and prints the encoded `Payment-Signature` value to stdout.
 
-### Full 402 Handling with curl (EVM)
+### Full 402 Handling with curl (EVM Wallet)
 
 ```bash
 TOKEN=$(cat siwe-token.txt)
+CHAIN="eth-mainnet"  # Replace with any supported chain slug
 
 # Save response headers and capture HTTP status code
-HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the PAYMENT-REQUIRED header value
+  # Extract the PAYMENT-REQUIRED header value and base64-encode it
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
   # Generate payment signature using the CLI
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
 
   # Retry with payment
-  curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+  curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: SIWE $TOKEN" \
@@ -53,27 +54,28 @@ else
 fi
 ```
 
-### Full 402 Handling with curl (Solana)
+### Full 402 Handling with curl (Solana Wallet)
 
 ```bash
 TOKEN=$(cat siws-token.txt)
+CHAIN="solana-mainnet"  # Replace with any supported chain slug
 
 # Save response headers and capture HTTP status code
-HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: SIWS $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the PAYMENT-REQUIRED header value
+  # Extract the PAYMENT-REQUIRED header value and base64-encode it
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
   # Generate payment signature using the CLI (note --architecture svm)
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
 
   # Retry with payment
-  curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+  curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: SIWS $TOKEN" \
@@ -119,12 +121,13 @@ const paymentSignature = await createSolanaPayment({
 Then retry the request with the `Payment-Signature` header:
 
 ```typescript
-const retryResponse = await fetch("https://x402.alchemy.com/eth-mainnet/v2", {
+const chainUrl = "https://x402.alchemy.com/{chainNetwork}/v2"; // any supported chain
+const retryResponse = await fetch(chainUrl, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
-    Authorization: `SIWE ${token}`, // or `SIWS ${token}` for Solana
+    Authorization: `SIWE ${token}`, // or `SIWS ${token}` for Solana wallet
     "Payment-Signature": paymentSignature,
   },
   body: JSON.stringify({

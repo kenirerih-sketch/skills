@@ -1,12 +1,12 @@
 # Making Requests
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
-
 The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the same auth and x402 payment flow. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
 Use `@alchemy/x402` with `@x402/fetch` or `@x402/axios` to make requests. Both wrappers automatically handle the 402 → sign → retry flow so you don't need to manage payments manually.
 
-## EVM Requests
+> **Wallet type vs query chain:** Your wallet type determines which auth scheme (SIWE/SIWS) and payment client to use. The chain URL in your request is independent — you can query any supported chain with either wallet type.
+
+## Using an EVM Wallet
 
 ### Option A: `@x402/fetch`
 
@@ -35,7 +35,7 @@ const authedFetch: typeof fetch = async (input, init) => {
 // Wrap with automatic x402 payment handling
 const paidFetch = wrapFetchWithPayment(authedFetch, client);
 
-// Make a request
+// Make a request — swap the chain URL to query any supported chain
 const response = await paidFetch("https://x402.alchemy.com/eth-mainnet/v2", {
   method: "POST",
   headers: {
@@ -72,7 +72,7 @@ const client = buildX402Client(privateKey);
 const siweToken = await signSiwe({ privateKey });
 const paidAxios = wrapAxiosWithPayment(axios.create(), client);
 
-// Make a request
+// Make a request — swap the chain URL to query any supported chain
 const { data } = await paidAxios.post(
   "https://x402.alchemy.com/eth-mainnet/v2",
   {
@@ -90,7 +90,7 @@ const { data } = await paidAxios.post(
 // { id: 1, jsonrpc: "2.0", result: "0x134e82c" }
 ```
 
-## Solana Requests
+## Using a Solana Wallet
 
 ### Option A: `@x402/fetch`
 
@@ -119,7 +119,7 @@ const authedFetch: typeof fetch = async (input, init) => {
 // Wrap with automatic x402 payment handling
 const paidFetch = wrapFetchWithPayment(authedFetch, client);
 
-// Make a request
+// Make a request — swap the chain URL to query any supported chain
 const response = await paidFetch("https://x402.alchemy.com/solana-mainnet/v2", {
   method: "POST",
   headers: {
@@ -156,7 +156,7 @@ const client = buildSolanaX402Client(privateKey);
 const siwsToken = await signSiws({ privateKey });
 const paidAxios = wrapAxiosWithPayment(axios.create(), client);
 
-// Make a request
+// Make a request — swap the chain URL to query any supported chain
 const { data } = await paidAxios.post(
   "https://x402.alchemy.com/solana-mainnet/v2",
   {
@@ -188,7 +188,7 @@ Both wrappers follow the same flow:
 The `paidFetch`/`paidAxios` wrappers are designed for JSON-RPC endpoints
 (`/:chainNetwork/v2`). For REST API POST endpoints like
 `/prices/v1/tokens/historical`, use **plain `fetch`** with the
-`Authorization: SIWE <token>` (or `SIWS <token>`) header instead. The x402 wrapper can
+`Authorization` header (`SIWE <token>` or `SIWS <token>` depending on your wallet type) instead. The x402 wrapper can
 corrupt POST request bodies on REST endpoints, causing 400 errors.
 
 The auth token alone is sufficient for authentication on all endpoints

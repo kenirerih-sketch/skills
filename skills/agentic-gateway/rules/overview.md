@@ -1,8 +1,8 @@
 # Gateway Overview
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
+The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform, authenticating with SIWE (EVM wallet) or SIWS (Solana wallet) and paying per-request with USDC via the x402 protocol.
 
-The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform, authenticating with SIWE (EVM) or SIWS (Solana) and paying per-request with USDC via the x402 protocol.
+> **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL.
 
 ## Base URL
 
@@ -26,7 +26,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 1. **Set up a wallet** — Use an existing wallet or generate a new one. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --architecture svm`.
 2. **Fund the wallet** — Load USDC on a supported payment network (Base for EVM wallets, Solana for SVM wallets).
 3. **Create an auth token** — EVM: `npx @alchemy/x402 sign --private-key ./wallet-key.txt` or `signSiwe()` in code; Solana: `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` or `signSiws()` in code.
-4. **Send a request** — Call any gateway route with `Authorization: SIWE <token>` (EVM) or `Authorization: SIWS <token>` (Solana). For quick queries without an npm project, see the [curl-workflow](curl-workflow.md) for a lightweight curl-based alternative.
+4. **Send a request** — Call any gateway route with your auth token (`Authorization: SIWE <token>` for EVM wallets, `Authorization: SIWS <token>` for Solana wallets). The chain in the URL is independent of your wallet type. For quick queries without an npm project, see the [curl-workflow](curl-workflow.md) for a lightweight curl-based alternative.
 5. **Handle 402 Payment Required** — If the gateway returns 402, create an x402 payment with `npx @alchemy/x402 pay` (add `--architecture svm` for Solana) or `createPayment()` / `createSolanaPayment()` and retry with a `Payment-Signature` header.
 6. **Receive the result** — After payment, the gateway proxies the request to Alchemy and returns the result. Subsequent requests with the same auth token do not require payment again.
 

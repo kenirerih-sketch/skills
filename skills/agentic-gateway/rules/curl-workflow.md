@@ -1,8 +1,8 @@
 # Curl Workflow
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
-
 A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same auth and payment flow.
+
+> **Auth vs chain:** Your wallet type determines the auth scheme (`SIWE` for EVM wallets, `SIWS` for Solana wallets) and payment commands. The chain URL in each curl request is independent — use whichever chain you want to query.
 
 ## When to Use
 
@@ -36,16 +36,19 @@ TOKEN=$(cat siws-token.txt)
 
 ## Step 2: Make API Calls with curl
 
-All gateway endpoints share the same base URL (`https://x402.alchemy.com`) and auth pattern. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
+All gateway endpoints share the same base URL (`https://x402.alchemy.com`) and auth pattern. Use `$AUTH_SCHEME` and `$TOKEN` from Step 1 — the auth header depends on your wallet type, while the chain URL depends on what you're querying. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
+
+In the examples below, replace `$AUTH_SCHEME` with `SIWE` (EVM wallet) or `SIWS` (Solana wallet), and read `$TOKEN` from the appropriate token file.
 
 ---
 
 ### Node JSON-RPC (`/:chainNetwork/v2`)
 
-#### Get the Latest Block Number (EVM)
+#### Get the Latest Block Number (EVM chain)
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+# Works with either SIWE or SIWS token
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
 
 curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -54,10 +57,11 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 ```
 
-#### Get the Latest Slot (Solana)
+#### Get the Latest Slot (Solana chain)
 
 ```bash
-TOKEN=$(cat siws-token.txt)
+# Works with either SIWE or SIWS token
+TOKEN=$(cat siws-token.txt)  # or siwe-token.txt for EVM wallet
 
 curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -69,7 +73,7 @@ curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
 #### Get ETH Balance for an Address
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 
 curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -81,7 +85,7 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
 #### Get SOL Balance for an Address
 
 ```bash
-TOKEN=$(cat siws-token.txt)
+TOKEN=$(cat siws-token.txt)  # or siwe-token.txt
 
 curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -95,7 +99,7 @@ curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
 The `eth_call` method lets you call read-only contract functions. For ERC-20 `balanceOf`, the data is the function selector `0x70a08231` followed by the address padded to 32 bytes:
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 
 # USDC balanceOf(0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045) on Ethereum Mainnet
 # USDC contract: 0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
@@ -113,7 +117,7 @@ curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
 #### Get NFTs Owned by an Address
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 
 curl -s -G "https://x402.alchemy.com/eth-mainnet/nft/v3/getNFTsForOwner" \
   --data-urlencode "owner=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" \
@@ -130,7 +134,7 @@ curl -s -G "https://x402.alchemy.com/eth-mainnet/nft/v3/getNFTsForOwner" \
 #### Get Token Prices by Symbol
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 
 curl -s -G "https://x402.alchemy.com/prices/v1/tokens/by-symbol" \
   --data-urlencode "symbols=ETH" \
@@ -139,7 +143,7 @@ curl -s -G "https://x402.alchemy.com/prices/v1/tokens/by-symbol" \
   -H "Authorization: SIWE $TOKEN"
 ```
 
-> **Note:** Prices and Portfolio APIs are not chain-specific. Either a SIWE or SIWS token can be used for authentication.
+> **Note:** Prices and Portfolio APIs are not chain-specific. Either a SIWE or SIWS token can be used for authentication — as can all other gateway endpoints.
 
 ---
 
@@ -148,7 +152,7 @@ curl -s -G "https://x402.alchemy.com/prices/v1/tokens/by-symbol" \
 #### Get Token Balances Across Chains
 
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 
 curl -s -X POST "https://x402.alchemy.com/data/v1/assets/tokens/by-address" \
   -H "Content-Type: application/json" \
@@ -161,26 +165,29 @@ curl -s -X POST "https://x402.alchemy.com/data/v1/assets/tokens/by-address" \
 
 If curl returns HTTP 402, the gateway requires a one-time USDC payment for this auth token. Extract the `PAYMENT-REQUIRED` header and use the CLI to create a payment:
 
-### EVM Path
+The payment command (`npx @alchemy/x402 pay`) depends on your wallet type, not the chain being queried. Use `--architecture svm` for Solana wallets.
+
+### EVM Wallet Path
 ```bash
 TOKEN=$(cat siwe-token.txt)
+CHAIN="eth-mainnet"  # Replace with any supported chain slug
 
 # Save response headers and capture HTTP status code
-HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the PAYMENT-REQUIRED header value
+  # Extract the PAYMENT-REQUIRED header value and base64-encode it
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
   # Generate payment signature using the CLI
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
 
   # Retry with payment
-  curl -s -X POST "https://x402.alchemy.com/eth-mainnet/v2" \
+  curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: SIWE $TOKEN" \
@@ -191,25 +198,27 @@ else
 fi
 ```
 
-### Solana Path
+### Solana Wallet Path
 
 ```bash
 TOKEN=$(cat siws-token.txt)
+CHAIN="solana-mainnet"  # Replace with any supported chain slug
 
 # Save response headers and capture HTTP status code
-HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://x402.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: SIWS $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
+  # Extract the PAYMENT-REQUIRED header value and base64-encode it
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Note: --architecture svm for Solana payments
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
+  # Note: --architecture svm for Solana wallet payments
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
 
-  curl -s -X POST "https://x402.alchemy.com/solana-mainnet/v2" \
+  curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
     -H "Authorization: SIWS $TOKEN" \

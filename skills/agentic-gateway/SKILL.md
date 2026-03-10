@@ -34,11 +34,11 @@ Before the first network call, internally evaluate:
 1. Did the user explicitly choose the agentic gateway flow? If yes, this skill applies.
 2. If not, is `ALCHEMY_API_KEY` absent? If no, this skill does not apply.
 3. Is a wallet confirmed with the user? If no, set `wallet=pending`.
-4. Has the user confirmed their architecture (EVM or Solana)? If no, set `ARCHITECTURE=pending`.
+4. Has the user confirmed their wallet type (EVM or Solana)? If no, set `ARCHITECTURE=pending`.
 
 If the gateway route applies, demo and public endpoints are disallowed.
 If `wallet=pending`, you MUST follow [wallet-bootstrap](rules/wallet-bootstrap.md) and wait for user confirmation before proceeding. Do not read wallet files or generate keys.
-If `ARCHITECTURE=pending`, you MUST ask the user whether they are using **EVM** or **Solana** before proceeding. Once determined, set `ARCHITECTURE` to `evm` or `svm` and use ONLY the corresponding EVM or Solana instructions in all subsequent rule files. Never mix paths.
+If `ARCHITECTURE=pending`, you MUST ask the user whether their wallet is **EVM** or **Solana** before proceeding — do NOT assume EVM, even when the user is querying an EVM chain. Always present both options equally. Once determined, set `ARCHITECTURE` to `evm` or `svm`. This determines wallet operations (auth token generation, payment signing) only — the user can query any supported chain regardless of wallet type.
 
 Do not output this check to the user.
 
@@ -72,7 +72,7 @@ Do not output this check to the user.
 
 ## Quick Start
 
-1. **Set up a wallet** — BLOCKING: Ask the user whether they need **EVM** or **Solana**. Record the choice as `ARCHITECTURE` (`evm` or `svm`) for the entire session. Do not read existing wallet files. See [wallet-bootstrap](rules/wallet-bootstrap.md).
+1. **Set up a wallet** — BLOCKING: Ask the user what type of wallet they have — **EVM** or **Solana**. Do not assume EVM, even when querying EVM chains; always present both options equally. Record the choice as `ARCHITECTURE` (`evm` or `svm`). This determines auth and payment commands only — the user can query any chain regardless of wallet type. Do not read existing wallet files. See [wallet-bootstrap](rules/wallet-bootstrap.md).
 2. **Fund with USDC**:
    - **EVM**: Load USDC on Base (Mainnet or Sepolia)
    - **Solana**: Load USDC on Solana (Mainnet or Devnet)
@@ -89,12 +89,12 @@ Do not output this check to the user.
    - **Solana**: `npx @alchemy/x402 pay --architecture svm ...` or `createSolanaPayment()` in code
    - See [payment](rules/payment.md)
 
-## EVM vs Solana Cheat Sheet
+## EVM vs Solana Wallet Cheat Sheet
 
-Once `ARCHITECTURE` is set, use this table to pick the correct variant for every operation:
+This table covers **wallet operations** (auth, payment, key management). Wallet type does NOT restrict which chains you can query — any auth token works with any chain URL.
 
-| Aspect | EVM | Solana (SVM) |
-|--------|-----|--------------|
+| Aspect | EVM Wallet | Solana Wallet |
+|--------|------------|---------------|
 | Auth scheme | SIWE | SIWS |
 | Auth header | `Authorization: SIWE <token>` | `Authorization: SIWS <token>` |
 | Sign command | `npx @alchemy/x402 sign --private-key ./wallet-key.txt` | `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt` |
@@ -103,7 +103,6 @@ Once `ARCHITECTURE` is set, use this table to pick the correct variant for every
 | Wallet generate | `npx @alchemy/x402 wallet generate` | `npx @alchemy/x402 wallet generate --architecture svm` |
 | Payment network | Base (USDC) | Solana (USDC) |
 | Library functions | `signSiwe`, `createPayment`, `buildX402Client` | `signSiws`, `createSolanaPayment`, `buildSolanaX402Client` |
-| Chain slugs | `eth-mainnet`, `base-mainnet`, etc. | `solana-mainnet`, `solana-devnet` |
 
 ## Rules
 
@@ -134,15 +133,15 @@ Once `ARCHITECTURE` is set, use this table to pick the correct variant for every
 ## Troubleshooting
 
 ### 401 Unauthorized
-- `MISSING_AUTH`: Add `Authorization: SIWE <token>` (EVM) or `Authorization: SIWS <token>` (Solana) header to your request
+- `MISSING_AUTH`: Add `Authorization: SIWE <token>` (EVM wallet) or `Authorization: SIWS <token>` (Solana wallet) header to your request
 - `MESSAGE_EXPIRED`: Regenerate token with `npx @alchemy/x402 sign --private-key ./wallet-key.txt` (add `--architecture svm` for Solana)
 - `INVALID_SIGNATURE` or `INVALID_DOMAIN`: Check that the message uses domain `x402.alchemy.com`
 - See [authentication](rules/authentication.md) for the full list of auth error codes
 
 ### 402 Payment Required
-- This is expected on first use. Run `npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required '<PAYMENT-REQUIRED header>'` (add `--architecture svm` for Solana)
+- This is expected on first use. Extract the `PAYMENT-REQUIRED` response header, base64-encode it, and run `npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$(echo '<PAYMENT-REQUIRED header>' | base64)"` (add `--architecture svm` for Solana)
 - Ensure your wallet has sufficient USDC on the appropriate payment network
-- After payment, subsequent requests with the same SIWE token return 200
+- After payment, subsequent requests with the same auth token return 200
 - See [payment](rules/payment.md) for manual payment creation
 
 ### Wallet setup issues

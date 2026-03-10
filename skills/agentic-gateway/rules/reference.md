@@ -1,10 +1,8 @@
 # Reference
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
-
 ## Endpoints
 
-The gateway supports the following APIs. All require SIWE auth and x402 payment.
+The gateway supports the following APIs. All require SIWE or SIWS auth and x402 payment.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -21,7 +19,7 @@ Chain-specific routes use the chain slug in the URL (e.g. `https://x402.alchemy.
 
 ## API Method Details
 
-The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`x402.alchemy.com`) and include the `Authorization: SIWE` header.
+The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`x402.alchemy.com`) and include an `Authorization` header (`SIWE` or `SIWS` depending on wallet type).
 
 | Gateway route | What to look up | Reference file |
 |---|---|---|
@@ -37,9 +35,7 @@ The gateway exposes the same API methods, parameters, and response formats as th
 
 ## Chain Network Slugs
 
-Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2` and `/nft/v3`):
-
-### EVM Chains
+Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2` and `/nft/v3`). Any chain can be queried with either a SIWE or SIWS auth token — the chain URL is independent of wallet type.
 
 | Chain | Mainnet | Testnet |
 |-------|---------|---------|
@@ -54,11 +50,6 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 | Hyperliquid | `hyperliquid-mainnet` | `hyperliquid-testnet` |
 | MegaETH | `megaeth-mainnet` | `megaeth-testnet` |
 | Monad | `monad-mainnet` | `monad-testnet` |
-
-### Non-EVM Chains
-
-| Chain | Mainnet | Testnet |
-|-------|---------|---------|
 | Solana | `solana-mainnet` | `solana-devnet` |
 
 ## Payment Networks
