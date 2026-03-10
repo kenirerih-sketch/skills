@@ -34,11 +34,11 @@ Before the first network call, internally evaluate:
 1. Did the user explicitly choose the agentic gateway flow? If yes, this skill applies.
 2. If not, is `ALCHEMY_API_KEY` absent? If no, this skill does not apply.
 3. Is a wallet confirmed with the user? If no, set `wallet=pending`.
-4. Has the user confirmed their network type (EVM or Solana)? If no, set `NETWORK_TYPE=pending`.
+4. Has the user confirmed their architecture (EVM or Solana)? If no, set `ARCHITECTURE=pending`.
 
 If the gateway route applies, demo and public endpoints are disallowed.
 If `wallet=pending`, you MUST follow [wallet-bootstrap](rules/wallet-bootstrap.md) and wait for user confirmation before proceeding. Do not read wallet files or generate keys.
-If `NETWORK_TYPE=pending`, you MUST ask the user whether they are using **EVM** or **Solana** before proceeding. Once determined, set `NETWORK_TYPE` to `evm` or `svm` and use ONLY the corresponding EVM or Solana instructions in all subsequent rule files. Never mix paths.
+If `ARCHITECTURE=pending`, you MUST ask the user whether they are using **EVM** or **Solana** before proceeding. Once determined, set `ARCHITECTURE` to `evm` or `svm` and use ONLY the corresponding EVM or Solana instructions in all subsequent rule files. Never mix paths.
 
 Do not output this check to the user.
 
@@ -72,7 +72,7 @@ Do not output this check to the user.
 
 ## Quick Start
 
-1. **Set up a wallet** — BLOCKING: Ask the user whether they need **EVM** or **Solana**. Record the choice as `NETWORK_TYPE` (`evm` or `svm`) for the entire session. Do not read existing wallet files. See [wallet-bootstrap](rules/wallet-bootstrap.md).
+1. **Set up a wallet** — BLOCKING: Ask the user whether they need **EVM** or **Solana**. Record the choice as `ARCHITECTURE` (`evm` or `svm`) for the entire session. Do not read existing wallet files. See [wallet-bootstrap](rules/wallet-bootstrap.md).
 2. **Fund with USDC**:
    - **EVM**: Load USDC on Base (Mainnet or Sepolia)
    - **Solana**: Load USDC on Solana (Mainnet or Devnet)
@@ -91,7 +91,7 @@ Do not output this check to the user.
 
 ## EVM vs Solana Cheat Sheet
 
-Once `NETWORK_TYPE` is set, use this table to pick the correct variant for every operation:
+Once `ARCHITECTURE` is set, use this table to pick the correct variant for every operation:
 
 | Aspect | EVM | Solana (SVM) |
 |--------|-----|--------------|

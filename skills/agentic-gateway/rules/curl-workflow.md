@@ -1,6 +1,6 @@
 # Curl Workflow
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, stop and ask the user before proceeding.
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
 
 A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same auth and payment flow.
 

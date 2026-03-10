@@ -1,6 +1,6 @@
 # Reference
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, stop and ask the user before proceeding.
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
 
 ## Endpoints
 

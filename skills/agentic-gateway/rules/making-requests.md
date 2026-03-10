@@ -1,6 +1,6 @@
 # Making Requests
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, stop and ask the user before proceeding.
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
 
 The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the same auth and x402 payment flow. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 

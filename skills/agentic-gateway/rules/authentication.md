@@ -1,6 +1,6 @@
 # Authentication
 
-> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `NETWORK_TYPE`. If the network type has not been confirmed yet, stop and ask the user before proceeding.
+> **Routing:** This file contains both EVM and Solana instructions. Follow ONLY the section matching the user's confirmed `ARCHITECTURE`. If the architecture has not been confirmed yet, stop and ask the user before proceeding.
 
 Every request to the gateway must include an `Authorization` header with a SIWE (EVM) or SIWS (Solana) token. The token proves wallet ownership without transmitting the private key.
 
