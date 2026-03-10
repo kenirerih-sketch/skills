@@ -214,11 +214,11 @@ HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "h
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the PAYMENT-REQUIRED header value and base64-encode it
+  # Extract the PAYMENT-REQUIRED header value (already base64-encoded)
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
   # Generate payment signature using the CLI
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
   # Retry with payment
   curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
@@ -246,11 +246,11 @@ HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "h
   -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the PAYMENT-REQUIRED header value and base64-encode it
+  # Extract the PAYMENT-REQUIRED header value (already base64-encoded)
   PAYMENT_REQUIRED=$(grep -i 'payment-required:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
   # Note: --architecture svm for Solana wallet payments
-  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$(echo "$PAYMENT_REQUIRED" | base64)")
+  PAYMENT_SIG=$(npx @alchemy/x402 pay --architecture svm --private-key ./wallet-key.txt --payment-required "$PAYMENT_REQUIRED")
 
   curl -s -X POST "https://x402.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
