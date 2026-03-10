@@ -1,17 +1,29 @@
 # Wallet Setup
 
-Use this rule **every time** the gateway flow needs a wallet — even if a wallet file (e.g. `wallet.json`, `wallet-key.txt`) already exists on disk. The agent must always confirm with the user which wallet to use before proceeding.
+> **Skip this entirely if `ALCHEMY_API_KEY` is set.** Wallet setup is only needed for the x402 gateway flow.
 
-**This is the mandatory entry point for all blockchain data requests.** No data can be fetched until wallet setup is complete. If the user asks a blockchain question and no wallet is configured, redirect them here first.
+Use this rule when the x402 gateway flow needs a wallet. If a wallet file (e.g. `wallet-key.txt`) already exists on disk, use it and proceed directly to authentication.
+
+**This is the mandatory entry point for x402 gateway requests when no API key is available.** No data can be fetched until wallet setup is complete. If the user asks a blockchain question and no wallet is configured (and no API key is set), redirect them here first. Do NOT mention the API key or suggest obtaining one — go straight to wallet setup.
 
 ## Determine Wallet Type and Source (Hard Requirement)
 
-You MUST ask the user the following two questions before proceeding. Do not skip, assume, or infer the answers. Wait for explicit responses before taking any wallet action.
+### If wallet files already exist on disk (e.g. `wallet-key.txt`)
 
-> 1. What type of wallet do you have — **EVM** (Ethereum, Base, Polygon, etc.) or **Solana**?
-> 2. Would you like to **create a new wallet** or **provide an existing private key**?
+Use the existing wallet and proceed directly to authentication. If the wallet type (EVM or Solana) is not already known, ask the user.
 
-**Do NOT assume EVM.** Wallet type determines auth and payment method ONLY — it has absolutely nothing to do with which chains can be queried. A Solana wallet can query Ethereum, and an EVM wallet can query Solana. Always present both EVM and Solana as equal options.
+### If no wallet is configured
+
+You MUST ask the user a **single combined question** that presents all wallet options. Do not skip, assume, or infer the answer. Wait for an explicit response before taking any wallet action.
+
+Present **all four options** in a single prompt — both EVM and Solana options MUST be included as equal choices:
+
+> 1. **EVM — create a new wallet** (pays USDC on Base)
+> 2. **EVM — import an existing private key** (pays USDC on Base)
+> 3. **Solana — create a new wallet** (pays USDC on Solana)
+> 4. **Solana — import an existing private key** (pays USDC on Solana)
+
+**Do NOT assume EVM. Do NOT omit the Solana options.** Wallet type determines auth and payment method ONLY — it has absolutely nothing to do with which chains can be queried. A Solana wallet can query Ethereum, and an EVM wallet can query Solana.
 
 ### Anti-pattern: DO NOT do this
 
@@ -21,6 +33,8 @@ NEVER use the query chain to justify, suggest, or default to a wallet type. The 
 - "You're looking up Solana data, so let's set up a Solana wallet" — **WRONG**
 - "For this ETH mainnet query, an EVM wallet makes sense" — **WRONG**
 - Skipping the wallet type question because the query chain "implies" the answer — **WRONG**
+- Presenting only EVM options without Solana (or vice versa) — **WRONG**
+- Splitting into two separate questions where the second question (Solana) can be dropped — **WRONG**
 
 The query chain and the wallet type are **completely independent choices**. Never correlate them in your reasoning or your response to the user.
 

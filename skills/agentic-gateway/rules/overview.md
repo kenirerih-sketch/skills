@@ -1,6 +1,10 @@
 # Gateway Overview
 
-The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform, authenticating with SIWE (EVM wallet) or SIWS (Solana wallet) and paying per-request with USDC via the x402 protocol.
+The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform.
+
+**If `ALCHEMY_API_KEY` is set**, use standard Alchemy endpoints directly (e.g. `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY`). No wallet, auth token, or payment setup is needed. Skip the rest of this document.
+
+**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to x402 wallet setup. The gateway authenticates with SIWE (EVM wallet) or SIWS (Solana wallet) and handles per-request payments with USDC via the x402 protocol.
 
 > **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried (e.g. "Since we're querying Ethereum, we'll use EVM" is wrong). Always ask the user which wallet type they prefer without reference to the query chain.
 

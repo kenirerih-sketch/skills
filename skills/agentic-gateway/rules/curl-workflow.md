@@ -1,10 +1,44 @@
 # Curl Workflow
 
-A lightweight way to call any Alchemy gateway endpoint using curl and the `@alchemy/x402` CLI, without setting up a full npm project. The gateway supports JSON-RPC, NFT, Portfolio, and Prices APIs — all accessible with the same auth and payment flow.
+A lightweight way to call Alchemy endpoints using curl.
+
+## If `ALCHEMY_API_KEY` Is Set
+
+No wallet or auth token needed. Just use the API key in the URL:
+
+```bash
+# Node JSON-RPC
+curl -s -X POST "https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
+
+# NFT API
+curl -s -G "https://eth-mainnet.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/getNFTsForOwner" \
+  --data-urlencode "owner=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" \
+  --data-urlencode "withMetadata=true" \
+  --data-urlencode "pageSize=10"
+
+# Prices API
+curl -s -G "https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-symbol" \
+  --data-urlencode "symbols=ETH"
+
+# Portfolio API
+curl -s -X POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/tokens/by-address" \
+  -H "Content-Type: application/json" \
+  -d '{"addresses":["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"],"withMetadata":true}'
+```
+
+Skip all steps below — no wallet, auth token, or payment handling needed.
+
+---
+
+## If `ALCHEMY_API_KEY` Is NOT Set (x402 Flow)
+
+Use the `@alchemy/x402` CLI with wallet-based authentication and x402 USDC payments.
 
 > **Auth vs chain:** Your wallet type determines the auth scheme (`SIWE` for EVM wallets, `SIWS` for Solana wallets) and payment commands. The chain URL in each curl request is independent — use whichever chain you want to query.
 
-## When to Use
+### When to Use
 
 - Answering quick blockchain questions (latest block, ETH balance, token balance, NFT ownership, token prices, portfolio data)
 - Making a few API calls from the command line or a bash script
@@ -12,11 +46,11 @@ A lightweight way to call any Alchemy gateway endpoint using curl and the `@alch
 
 For SDK-based workflows with automatic payment handling, see [making-requests](making-requests.md) instead.
 
-## Step 0: Ensure Wallet Exists
+### Step 0: Ensure Wallet Exists
 
 Follow [wallet-bootstrap](wallet-bootstrap.md) before proceeding. Do NOT generate or import a wallet from this file — the wallet-bootstrap rule contains a mandatory user prompt that must be followed.
 
-## Step 1: Generate an Auth Token
+### Step 1: Generate an Auth Token
 
 ### EVM Path
 
@@ -34,7 +68,7 @@ TOKEN=$(cat siws-token.txt)
 
 > **Important:** Auth tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add token files to `.gitignore`.
 
-## Step 2: Make API Calls with curl
+### Step 2: Make API Calls with curl
 
 All gateway endpoints share the same base URL (`https://x402.alchemy.com`) and auth pattern. Use `$AUTH_SCHEME` and `$TOKEN` from Step 1 — the auth header depends on your wallet type, while the chain URL depends on what you're querying. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
@@ -161,7 +195,7 @@ curl -s -X POST "https://x402.alchemy.com/data/v1/assets/tokens/by-address" \
   -d '{"addresses":["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"],"withMetadata":true}'
 ```
 
-## Step 3: Handle 402 Payment Required
+### Step 3: Handle 402 Payment Required
 
 If curl returns HTTP 402, the gateway requires a one-time USDC payment for this auth token. Extract the `PAYMENT-REQUIRED` header and use the CLI to create a payment:
 
@@ -233,7 +267,7 @@ For more details on the payment flow, see [payment](payment.md).
 
 **Note:** After a successful payment, subsequent requests using the same auth token will return 200 without requiring payment again.
 
-## Step 4: Handle 401 MESSAGE_EXPIRED
+### Step 4: Handle 401 MESSAGE_EXPIRED
 
 If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the auth token has expired. Regenerate it:
 
