@@ -243,10 +243,17 @@ fi
 
 #### Stripe (credit card)
 
+The Stripe flow requires a SPT (Stripe Payment Token), which is obtained by:
+1. Collecting card details via Stripe.js (browser) to get a payment method ID
+2. Exchanging it for a SPT via `mpp.alchemy.com/mpp/spt`
+
+Once you have the SPT, use it in the 402 flow:
+
 ```bash
 TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
 CHAIN="eth-mainnet"  # Replace with any supported chain slug
 AUTH_SCHEME="SIWE"   # or SIWS for Solana wallet
+SPT="your_spt_token" # Obtained via Stripe.js + /mpp/spt endpoint
 
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
@@ -257,15 +264,15 @@ HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "h
 if [ "$HTTP_CODE" = "402" ]; then
   WWW_AUTH=$(grep -i 'www-authenticate:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Select the Stripe challenge and create credential
+  # Select the Stripe challenge and create credential using SPT
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const challenges = Challenge.parse(process.argv[1]);
     const stripe = challenges.find(c => c.method === 'stripe');
-    Credential.create(stripe, {}).then(c => {
+    Credential.create(stripe, { spt: process.argv[2] }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
-  " "$WWW_AUTH")
+  " "$WWW_AUTH" "$SPT")
 
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \

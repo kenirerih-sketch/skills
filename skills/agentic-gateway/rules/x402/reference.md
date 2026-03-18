@@ -59,7 +59,7 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 | Arbitrum | `arb-mainnet` | `arb-sepolia` |
 | Optimism | `opt-mainnet` | `opt-sepolia` |
 | World Chain | `worldchain-mainnet` | `worldchain-sepolia` |
-| Tempo | `tempo-mainnet` | `tempo-testnet` |
+| Tempo | `tempo-mainnet` | `tempo-moderato` |
 | Hyperliquid | `hyperliquid-mainnet` | `hyperliquid-testnet` |
 | MegaETH | `megaeth-mainnet` | `megaeth-testnet` |
 | Monad | `monad-mainnet` | `monad-testnet` |

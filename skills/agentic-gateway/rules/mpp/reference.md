@@ -59,7 +59,7 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 | Arbitrum | `arb-mainnet` | `arb-sepolia` |
 | Optimism | `opt-mainnet` | `opt-sepolia` |
 | World Chain | `worldchain-mainnet` | `worldchain-sepolia` |
-| Tempo | `tempo-mainnet` | `tempo-testnet` |
+| Tempo | `tempo-mainnet` | `tempo-moderato` |
 | Hyperliquid | `hyperliquid-mainnet` | `hyperliquid-testnet` |
 | MegaETH | `megaeth-mainnet` | `megaeth-testnet` |
 | Monad | `monad-mainnet` | `monad-testnet` |
@@ -69,20 +69,22 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 
 Payments are made on these networks (independent of which chain you're querying):
 
-### EVM Payment Networks (Tempo)
+### Tempo Payment Networks (EVM only)
+
+Tempo uses on-chain USDC on EVM networks. Tempo requires an EVM wallet (SIWE auth).
 
 | Network | CAIP-2 ID | USDC Address | EIP-712 Domain Name |
 |---------|-----------|--------------|---------------------|
-| Base Sepolia (testnet) | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | `USDC` |
 | Base Mainnet | `eip155:8453` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `USD Coin` |
 
-### SVM Payment Networks (Tempo)
+### Stripe Payments (credit card)
 
-Solana wallets pay with USDC on Solana. The payment network is determined by the 402 challenge; the `mppx` library handles selection automatically.
+Stripe payments use a credit card via Stripe.js. No USDC funding is needed. The flow requires:
+1. Collect card details via Stripe.js to obtain a payment method
+2. Exchange the payment method for a SPT (Stripe Payment Token) via `mpp.alchemy.com/mpp/spt`
+3. Use the SPT to create a payment credential in response to a 402
 
-### Stripe Payments
-
-When Stripe is enabled, card payments are available as an alternative to on-chain USDC. The 402 response `methods` array will include `"stripe"` when available.
+The 402 response `methods` array will include `"stripe"` when Stripe is available.
 
 ## Request Headers (Client → Gateway)
 
@@ -128,10 +130,3 @@ MPP uses the `Authorization` header for both SIWE/SIWS auth and payment credenti
 | 404 | Invalid chain network slug or route |
 | 500 | Internal gateway error |
 
-## Testnet Funding
-
-For development on Base Sepolia:
-
-1. Get testnet ETH from a Base Sepolia faucet for gas
-2. Get testnet USDC from the [Circle USDC faucet](https://faucet.circle.com/) — select "Base Sepolia"
-3. USDC address on Base Sepolia: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`

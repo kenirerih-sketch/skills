@@ -46,13 +46,14 @@ if (response.status === 402) {
   const challenges = Challenge.parse(wwwAuthenticate);
 
   // Select the challenge matching the user's chosen payment method:
-  // - Tempo (on-chain USDC): challenges.find(c => c.method === "tempo")
-  // - Stripe (credit card):  challenges.find(c => c.method === "stripe")
+  // - Tempo (on-chain USDC, EVM only): challenges.find(c => c.method === "tempo")
+  // - Stripe (credit card):            challenges.find(c => c.method === "stripe")
   const challenge = challenges.find(c => c.method === "tempo"); // or "stripe"
 
   // Create payment credential
   // For Tempo: pass { privateKey } to sign a USDC payment
-  // For Stripe: pass {} — mppx handles card collection
+  // For Stripe: pass { spt } where spt is obtained via Stripe.js + /mpp/spt
+  //   (see payment.md for the full Stripe.js → SPT → credential flow)
   const credential = await Credential.create(challenge, { privateKey });
   const serialized = Credential.serialize(credential);
 
@@ -115,11 +116,13 @@ if (response.status === 402) {
   const wwwAuthenticate = response.headers.get("WWW-Authenticate");
   const challenges = Challenge.parse(wwwAuthenticate);
 
-  // Select challenge by payment method: "tempo" or "stripe"
-  const challenge = challenges.find(c => c.method === "tempo"); // or "stripe"
+  // Select challenge by payment method: "tempo" (EVM only) or "stripe"
+  // Note: Solana wallets can only use Stripe, not Tempo
+  const challenge = challenges.find(c => c.method === "stripe");
 
-  // Tempo: pass { privateKey }. Stripe: pass {}
-  const credential = await Credential.create(challenge, { privateKey });
+  // Stripe: pass { spt } where spt is obtained via Stripe.js + /mpp/spt
+  // (see payment.md for the full Stripe.js → SPT → credential flow)
+  const credential = await Credential.create(challenge, { spt });
   const serialized = Credential.serialize(credential);
 
   const retryResponse = await fetch("https://mpp.alchemy.com/solana-mainnet/v2", {

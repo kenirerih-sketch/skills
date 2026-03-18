@@ -12,8 +12,8 @@ You MUST ask the user which payment method they want to use. Present this prompt
 
 > How would you like to pay for API requests?
 >
-> 1. **Tempo** — on-chain USDC payment (gasless). Requires a wallet funded with USDC.
-> 2. **Stripe** — credit card payment. No wallet funding needed — just a card on file.
+> 1. **Tempo** — on-chain USDC payment (gasless, EVM wallet required). Requires a wallet funded with USDC.
+> 2. **Stripe** — credit card payment. No wallet funding needed — just a card.
 
 **Do NOT skip this prompt. Do NOT pick a payment method on behalf of the user.** Wait for their explicit choice before proceeding.
 
@@ -23,7 +23,9 @@ You MUST ask the user which payment method they want to use. Present this prompt
 
 ## Step 2: Wallet Setup
 
-A wallet is required for **both** payment methods — it provides the SIWE/SIWS auth token needed to authenticate with the gateway. The difference is that **Tempo** requires the wallet to be funded with USDC, while **Stripe** does not.
+A wallet is required for **both** payment methods — it provides the SIWE auth token needed to authenticate with the gateway. The difference is that **Tempo** requires the wallet to be funded with USDC, while **Stripe** does not.
+
+**Important:** Tempo only supports EVM wallets (SIWE auth). If the user chose Tempo, skip the wallet type question and use EVM. If the user chose Stripe, they may use either EVM or Solana.
 
 ### If wallet files already exist on disk (e.g. `wallet-key.txt`)
 
@@ -31,33 +33,31 @@ Use the existing wallet and proceed directly to:
 - [Step 3: Fund the Wallet](#step-3-fund-the-wallet-tempo-only) (if Tempo)
 - [Step 4: Generate Auth Token](#step-4-generate-auth-token) (if Stripe)
 
-If the wallet type (EVM or Solana) is not already known, ask the user.
-
 ### If no wallet is configured
 
-You MUST ask the user a **single combined question** that presents all wallet options. Do not skip, assume, or infer the answer. Wait for an explicit response before taking any wallet action.
+#### Tempo (EVM only)
 
-Present **all four options** in a single prompt — both EVM and Solana options MUST be included as equal choices:
+Tempo requires an EVM wallet. Ask the user:
+
+> 1. **EVM — create a new wallet**
+> 2. **EVM — import an existing private key**
+
+Set `ARCHITECTURE = evm`.
+
+#### Stripe (EVM or Solana)
+
+Stripe supports both wallet types. Present all options:
 
 > 1. **EVM — create a new wallet**
 > 2. **EVM — import an existing private key**
 > 3. **Solana — create a new wallet**
 > 4. **Solana — import an existing private key**
 
-**Do NOT assume EVM. Do NOT omit the Solana options.** Wallet type determines auth ONLY — it has absolutely nothing to do with which chains can be queried. A Solana wallet can query Ethereum, and an EVM wallet can query Solana.
+Wallet type determines auth only — it has nothing to do with which chains can be queried. Do NOT assume EVM. Do NOT correlate wallet type with query chain.
 
-### Anti-pattern: DO NOT do this
-
-NEVER use the query chain to justify, suggest, or default to a wallet type. The following are **all wrong**:
-
-- "Since we're querying Ethereum, we'll create an EVM wallet" — **WRONG**
-- "You're looking up Solana data, so let's set up a Solana wallet" — **WRONG**
-- Skipping the wallet type question because the query chain "implies" the answer — **WRONG**
-- Presenting only EVM options without Solana (or vice versa) — **WRONG**
+**Record the user's choice:** Set `ARCHITECTURE = evm` or `ARCHITECTURE = svm`.
 
 Do not generate a wallet, import a key, or proceed to any other step until the user answers.
-
-**Record the user's choice:** Once the user answers, set `ARCHITECTURE = evm` or `ARCHITECTURE = svm`.
 
 ### Path A: Use an Existing Connected Wallet
 
@@ -85,7 +85,7 @@ Verify the imported key:
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
-#### Solana Path
+#### Solana Path (Stripe only)
 
 ```bash
 npx @alchemy/x402 wallet import --architecture svm --private-key ./wallet-key.txt
@@ -107,7 +107,7 @@ echo "wallet-key.txt" >> .gitignore
 npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
 ```
 
-#### Solana Path
+#### Solana Path (Stripe only)
 
 ```bash
 npx @alchemy/x402 wallet generate --architecture svm | jq -r .privateKey > wallet-key.txt
@@ -123,39 +123,13 @@ npx @alchemy/x402 wallet import --architecture svm --private-key ./wallet-key.tx
 
 **Skip this step if the user chose Stripe.** Stripe payments use a credit card — no USDC funding is needed.
 
-### EVM Wallets
-
-#### Testnet (Base Sepolia)
-
-1. Go to the [Circle USDC faucet](https://faucet.circle.com/)
-2. Select **Base Sepolia**
-3. Paste your wallet address
-4. Request testnet USDC
-
-The USDC will arrive at your address on Base Sepolia (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`).
-
-#### Mainnet
-
-Transfer USDC to your wallet address on Base Mainnet.
-
-### Solana Wallets
-
-#### Devnet
-
-1. Go to the [Circle USDC faucet](https://faucet.circle.com/)
-2. Select **Solana Devnet**
-3. Paste your Solana wallet address
-4. Request testnet USDC
-
-#### Mainnet
-
-Transfer USDC to your wallet address on Solana Mainnet.
+Tempo requires USDC on an EVM network (e.g. Base Mainnet). Transfer USDC to the wallet address displayed during wallet setup.
 
 ---
 
 ## Step 4: Generate Auth Token
 
-Generate a SIWE/SIWS auth token for the MPP gateway. This is required for **both** Tempo and Stripe.
+Generate a SIWE auth token for the MPP gateway. This is required for **both** Tempo and Stripe.
 
 ### EVM Path
 
@@ -163,7 +137,7 @@ Generate a SIWE/SIWS auth token for the MPP gateway. This is required for **both
 npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
 ```
 
-### Solana Path
+### Solana Path (Stripe only)
 
 ```bash
 npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt --domain mpp.alchemy.com > siws-token.txt
@@ -189,7 +163,7 @@ const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
 const address = getWalletAddress(privateKey);
 ```
 
-### Solana Path
+### Solana Path (Stripe only)
 
 ```typescript
 import { generateSolanaWallet, getSolanaWalletAddress } from "@alchemy/x402";

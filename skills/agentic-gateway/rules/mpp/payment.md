@@ -6,8 +6,8 @@ When the gateway returns **402**, you must create an MPP payment credential and 
 
 | Method | Description | Requirements |
 |--------|-------------|-------------|
-| **Tempo** | On-chain USDC payment (gasless) | Wallet funded with USDC |
-| **Stripe** | Credit card payment | Card details (no USDC needed) |
+| **Tempo** | On-chain USDC payment (gasless, EVM only) | EVM wallet funded with USDC, SIWE auth |
+| **Stripe** | Credit card payment via Stripe.js + SPT token | Card details, any wallet for auth |
 
 The 402 response body's `methods` array tells you which methods are available. **Always use the method the user chose during setup** (see [wallet-bootstrap](wallet-bootstrap.md)). If the user chose Tempo, select the `tempo` challenge. If they chose Stripe, select the `stripe` challenge.
 
@@ -16,7 +16,7 @@ The 402 response body's `methods` array tells you which methods are available. *
 1. Send a request with your auth token
 2. Gateway returns 402 with `WWW-Authenticate` header containing challenges
 3. Parse the challenges and select the one matching the user's chosen payment method
-4. Create a payment credential using the `mppx` library
+4. Create a payment credential (method-specific — see below)
 5. Retry the request with the credential in the `Authorization` header
 
 ### 402 Response Structure
@@ -38,7 +38,7 @@ The `WWW-Authenticate` response header contains the serialized challenge(s). Whe
 
 ## Tempo Payment (on-chain USDC)
 
-Tempo payments use on-chain USDC. The wallet must be funded before making requests.
+Tempo payments use on-chain USDC on EVM networks. The wallet must be an EVM wallet funded with USDC. Tempo uses SIWE auth only.
 
 ### In Code
 
@@ -52,7 +52,7 @@ const challenges = Challenge.parse(wwwAuthenticate);
 // Select the Tempo challenge
 const tempoChallenge = challenges.find(c => c.method === "tempo");
 
-// Create a credential — signs a USDC payment authorization with your wallet
+// Create a credential — signs a USDC payment authorization with your EVM wallet
 const credential = await Credential.create(tempoChallenge, {
   privateKey: process.env.PRIVATE_KEY,
 });
@@ -85,7 +85,7 @@ HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "h
 if [ "$HTTP_CODE" = "402" ]; then
   WWW_AUTH=$(grep -i 'www-authenticate:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Create Tempo payment credential
+  # Select the Tempo challenge and create credential
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const fs = require('fs');
@@ -111,24 +111,44 @@ fi
 
 ## Stripe Payment (credit card)
 
-Stripe payments charge a credit card. No USDC funding is needed — the wallet is only used for SIWE/SIWS authentication.
+Stripe payments charge a credit card. No USDC funding is needed — the wallet is only used for SIWE/SIWS authentication. The Stripe flow involves three steps:
+
+1. **Collect card details** using Stripe.js to get a Stripe payment method ID
+2. **Exchange for SPT** — POST the payment method to `mpp.alchemy.com/mpp/spt` to receive a SPT (Stripe Payment Token)
+3. **Create credential** — use the SPT to create a payment credential in response to the 402 challenge
 
 ### In Code
 
 ```typescript
 import { Challenge, Credential } from "mppx";
+import { loadStripe } from "@stripe/stripe-js";
 
-const wwwAuthenticate = response.headers.get("WWW-Authenticate");
-const challenges = Challenge.parse(wwwAuthenticate);
-
-// Select the Stripe challenge
-const stripeChallenge = challenges.find(c => c.method === "stripe");
-
-// Create a credential — provides card payment details
-const credential = await Credential.create(stripeChallenge, {
-  // Stripe handles card collection — the mppx library manages the flow
+// Step 1: Collect card details via Stripe.js
+const stripe = await loadStripe("your_stripe_publishable_key");
+const { paymentMethod } = await stripe.createPaymentMethod({
+  type: "card",
+  card: cardElement, // Stripe.js card element
 });
 
+// Step 2: Exchange for SPT token
+const sptResponse = await fetch("https://mpp.alchemy.com/mpp/spt", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `SIWE ${token}`, // or SIWS for Solana wallet
+  },
+  body: JSON.stringify({
+    paymentMethodId: paymentMethod.id,
+  }),
+});
+const { spt } = await sptResponse.json();
+
+// Step 3: Use SPT to create credential from the 402 challenge
+const wwwAuthenticate = response.headers.get("WWW-Authenticate");
+const challenges = Challenge.parse(wwwAuthenticate);
+const stripeChallenge = challenges.find(c => c.method === "stripe");
+
+const credential = await Credential.create(stripeChallenge, { spt });
 const serialized = Credential.serialize(credential);
 
 // Retry with the payment credential
@@ -144,33 +164,39 @@ const retryResponse = await fetch("https://mpp.alchemy.com/{chainNetwork}/v2", {
 
 ### With curl
 
+The Stripe flow requires Stripe.js for card collection, which runs in a browser. For CLI/curl workflows, you can use a pre-obtained SPT token:
+
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
 CHAIN="eth-mainnet"
+AUTH_SCHEME="SIWE"  # or SIWS
+
+# Assuming SPT was obtained via Stripe.js + /mpp/spt endpoint
+SPT="your_spt_token"
 
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: SIWE $TOKEN" \
+  -H "Authorization: $AUTH_SCHEME $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
   WWW_AUTH=$(grep -i 'www-authenticate:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Create Stripe payment credential
+  # Select the Stripe challenge and create credential using SPT
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const challenges = Challenge.parse(process.argv[1]);
     const stripe = challenges.find(c => c.method === 'stripe');
-    Credential.create(stripe, {}).then(c => {
+    Credential.create(stripe, { spt: process.argv[2] }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
-  " "$WWW_AUTH")
+  " "$WWW_AUTH" "$SPT")
 
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: SIWE $TOKEN, Payment $CREDENTIAL" \
+    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json
@@ -181,8 +207,8 @@ fi
 
 ## Payment Details
 
-- **Tempo**: USDC (6 decimals), gasless on-chain payment on Base (EVM) or Solana (SVM)
-- **Stripe**: Card payment in USD (2 decimals), charged off-chain
+- **Tempo**: USDC (6 decimals), gasless on-chain payment on EVM networks. EVM wallet (SIWE) required.
+- **Stripe**: Card payment in USD, charged off-chain via Stripe.js → SPT → credential flow.
 - **Amount**: Specified in the 402 challenge
 - **Settlement**: The gateway verifies the credential and settles the payment
 
@@ -217,5 +243,6 @@ If a payment fails, the gateway returns 402 with the original challenge:
 Common issues:
 - **Insufficient USDC balance** (Tempo only) — fund the wallet with more USDC
 - **Card declined** (Stripe only) — use a different card
+- **Invalid SPT** (Stripe only) — the SPT may have expired; obtain a new one via `/mpp/spt`
 - **Invalid or expired challenge** — request a fresh challenge by retrying without the payment credential
 - **Unsupported payment method** — check the `methods` array; Stripe may not be enabled on this gateway
