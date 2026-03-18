@@ -4,9 +4,20 @@ The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platfo
 
 **If `ALCHEMY_API_KEY` is set**, use standard Alchemy endpoints directly (e.g. `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY`). No wallet, auth token, or payment setup is needed. Skip the rest of this document.
 
-**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to MPP wallet setup. The gateway authenticates with SIWE (EVM wallet) or SIWS (Solana wallet) and handles per-request payments via the MPP protocol using Tempo (on-chain USDC) or Stripe (card).
+**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to MPP wallet setup. The gateway authenticates with SIWE (EVM wallet) or SIWS (Solana wallet) and handles per-request payments via the MPP protocol.
 
-> **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried (e.g. "Since we're querying Ethereum, we'll use EVM" is wrong). Always ask the user which wallet type they prefer without reference to the query chain.
+## Payment Methods
+
+MPP supports two payment methods. The user must choose one during setup (see [wallet-bootstrap](wallet-bootstrap.md)):
+
+| Method | How it works | Wallet funding needed? |
+|--------|-------------|----------------------|
+| **Tempo** | On-chain USDC payment (gasless) | Yes — wallet must hold USDC |
+| **Stripe** | Credit card payment | No — card is charged directly |
+
+Both methods require a wallet for SIWE/SIWS authentication. The difference is whether the wallet needs to be funded with USDC.
+
+> **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried. Always ask the user which wallet type they prefer.
 
 ## Base URL
 
@@ -27,12 +38,24 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 
 ## End-to-End Flow
 
-1. **Set up a wallet (REQUIRED — must complete before any data request)** — Ask the user to either create a new wallet or provide an existing private key. EVM: `npx @alchemy/x402 wallet generate`; Solana: `npx @alchemy/x402 wallet generate --architecture svm`. See [wallet-bootstrap](wallet-bootstrap.md).
-2. **Fund the wallet** — Load USDC on a supported payment network (Base for EVM wallets, Solana for SVM wallets).
-3. **Create an auth token** — EVM: `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`; Solana: `npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt --domain mpp.alchemy.com`.
-4. **Send a request** — Call any gateway route with your auth token (`Authorization: SIWE <token>` for EVM wallets, `Authorization: SIWS <token>` for Solana wallets). The chain in the URL is independent of your wallet type. For quick queries without an npm project, see the [curl-workflow](curl-workflow.md) for a lightweight curl-based alternative.
-5. **Handle 402 Payment Required** — If the gateway returns 402, parse the `WWW-Authenticate` challenge header. Create a payment credential using the `mppx` library and retry with the credential appended to the `Authorization` header: `Authorization: SIWE <token>, Payment <credential>`.
-6. **Receive the result** — After payment, the gateway proxies the request to Alchemy and returns the result. Subsequent requests with the same auth token do not require payment again. The response includes a `Payment-Receipt` header and `X-Protocol-Version: mpp/1.0`.
+### Tempo (on-chain USDC)
+
+1. **Choose payment method** → Tempo. See [wallet-bootstrap](wallet-bootstrap.md).
+2. **Set up a wallet** — Create or import an EVM or Solana wallet.
+3. **Fund the wallet** — Load USDC on Base (EVM) or Solana (SVM).
+4. **Create an auth token** — `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`
+5. **Send a request** — Include `Authorization: SIWE <token>` (or `SIWS`).
+6. **Handle 402** — Parse `WWW-Authenticate`, select the `tempo` challenge, create a credential with `mppx`, retry with `Payment <credential>`.
+7. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
+
+### Stripe (credit card)
+
+1. **Choose payment method** → Stripe. See [wallet-bootstrap](wallet-bootstrap.md).
+2. **Set up a wallet** — Create or import an EVM or Solana wallet (needed for auth only — no funding required).
+3. **Create an auth token** — `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`
+4. **Send a request** — Include `Authorization: SIWE <token>` (or `SIWS`).
+5. **Handle 402** — Parse `WWW-Authenticate`, select the `stripe` challenge, create a credential with `mppx` (provides card details), retry with `Payment <credential>`.
+6. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
 ## Packages
 

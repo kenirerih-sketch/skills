@@ -197,70 +197,72 @@ curl -s -X POST "https://mpp.alchemy.com/data/v1/assets/tokens/by-address" \
 
 ### Step 3: Handle 402 Payment Required
 
-If curl returns HTTP 402, the gateway requires a payment for this auth token. Extract the `WWW-Authenticate` header and create a payment credential using `mppx`:
+If curl returns HTTP 402, the gateway requires payment. The handling depends on which payment method the user chose during setup. Extract the `WWW-Authenticate` header and create a credential for the correct method.
 
-### EVM Wallet Path
+For full details on both payment methods, see [payment](payment.md).
+
+**Note:** After a successful payment, subsequent requests using the same auth token will return 200 without requiring payment again.
+
+#### Tempo (on-chain USDC)
+
 ```bash
-TOKEN=$(cat siwe-token.txt)
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
 CHAIN="eth-mainnet"  # Replace with any supported chain slug
+AUTH_SCHEME="SIWE"   # or SIWS for Solana wallet
 
-# Save response headers and capture HTTP status code
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: SIWE $TOKEN" \
+  -H "Authorization: $AUTH_SCHEME $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the WWW-Authenticate header value
   WWW_AUTH=$(grep -i 'www-authenticate:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Create payment credential using mppx
+  # Select the Tempo challenge and create credential
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const fs = require('fs');
-    const challenge = Challenge.parse(process.argv[1])[0];
+    const challenges = Challenge.parse(process.argv[1]);
+    const tempo = challenges.find(c => c.method === 'tempo');
     const privateKey = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
-    Credential.create(challenge, { privateKey }).then(c => {
+    Credential.create(tempo, { privateKey }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH")
 
-  # Retry with payment credential
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: SIWE $TOKEN, Payment $CREDENTIAL" \
+    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json
 fi
 ```
 
-### Solana Wallet Path
+#### Stripe (credit card)
 
 ```bash
-TOKEN=$(cat siws-token.txt)
-CHAIN="solana-mainnet"  # Replace with any supported chain slug
+TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
+CHAIN="eth-mainnet"  # Replace with any supported chain slug
+AUTH_SCHEME="SIWE"   # or SIWS for Solana wallet
 
-# Save response headers and capture HTTP status code
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: SIWS $TOKEN" \
-  -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}')
+  -H "Authorization: $AUTH_SCHEME $TOKEN" \
+  -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
-  # Extract the WWW-Authenticate header value
   WWW_AUTH=$(grep -i 'www-authenticate:' headers.txt | sed 's/^[^:]*: //' | tr -d '\r')
 
-  # Create payment credential using mppx
+  # Select the Stripe challenge and create credential
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
-    const fs = require('fs');
-    const challenge = Challenge.parse(process.argv[1])[0];
-    const privateKey = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
-    Credential.create(challenge, { privateKey }).then(c => {
+    const challenges = Challenge.parse(process.argv[1]);
+    const stripe = challenges.find(c => c.method === 'stripe');
+    Credential.create(stripe, {}).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH")
@@ -268,16 +270,12 @@ if [ "$HTTP_CODE" = "402" ]; then
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: SIWS $TOKEN, Payment $CREDENTIAL" \
-    -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}'
+    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
+    -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json
 fi
 ```
-
-For more details on the payment flow, see [payment](payment.md).
-
-**Note:** After a successful payment, subsequent requests using the same auth token will return 200 without requiring payment again.
 
 ### Step 4: Handle 401 MESSAGE_EXPIRED
 

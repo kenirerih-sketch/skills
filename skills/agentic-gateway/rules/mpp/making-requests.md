@@ -44,9 +44,15 @@ const response = await fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
 if (response.status === 402) {
   const wwwAuthenticate = response.headers.get("WWW-Authenticate");
   const challenges = Challenge.parse(wwwAuthenticate);
-  const challenge = challenges[0]; // Select preferred method
+
+  // Select the challenge matching the user's chosen payment method:
+  // - Tempo (on-chain USDC): challenges.find(c => c.method === "tempo")
+  // - Stripe (credit card):  challenges.find(c => c.method === "stripe")
+  const challenge = challenges.find(c => c.method === "tempo"); // or "stripe"
 
   // Create payment credential
+  // For Tempo: pass { privateKey } to sign a USDC payment
+  // For Stripe: pass {} — mppx handles card collection
   const credential = await Credential.create(challenge, { privateKey });
   const serialized = Credential.serialize(credential);
 
@@ -108,8 +114,11 @@ const response = await fetch("https://mpp.alchemy.com/solana-mainnet/v2", {
 if (response.status === 402) {
   const wwwAuthenticate = response.headers.get("WWW-Authenticate");
   const challenges = Challenge.parse(wwwAuthenticate);
-  const challenge = challenges[0];
 
+  // Select challenge by payment method: "tempo" or "stripe"
+  const challenge = challenges.find(c => c.method === "tempo"); // or "stripe"
+
+  // Tempo: pass { privateKey }. Stripe: pass {}
   const credential = await Credential.create(challenge, { privateKey });
   const serialized = Credential.serialize(credential);
 
