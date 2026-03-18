@@ -4,7 +4,7 @@ The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platfo
 
 **If `ALCHEMY_API_KEY` is set**, use standard Alchemy endpoints directly (e.g. `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY`). No wallet, auth token, or payment setup is needed. Skip the rest of this document.
 
-**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to MPP wallet setup. The gateway authenticates with SIWE or SIWS and handles per-request payments via the MPP protocol.
+**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to MPP wallet setup. The gateway authenticates with SIWE and handles per-request payments via the MPP protocol.
 
 ## Payment Methods
 
@@ -13,11 +13,11 @@ MPP supports two payment methods. The user must choose one during setup (see [wa
 | Method | How it works | Wallet type | Wallet funding needed? |
 |--------|-------------|-------------|----------------------|
 | **Tempo** | On-chain USDC payment (gasless) | EVM only (SIWE) | Yes — wallet must hold USDC |
-| **Stripe** | Credit card via Stripe.js + SPT token | EVM or Solana | No — card is charged directly |
+| **Stripe** | Credit card via Stripe.js + SPT token | EVM | No — card is charged directly |
 
-Both methods require a wallet for SIWE/SIWS authentication. Tempo additionally requires the EVM wallet to be funded with USDC. Stripe requires obtaining a SPT (Stripe Payment Token) via Stripe.js and the `/mpp/spt` endpoint.
+Both methods require a wallet for SIWE authentication. Tempo additionally requires the EVM wallet to be funded with USDC. Stripe requires obtaining a SPT (Stripe Payment Token) via Stripe.js and the `/mpp/spt` endpoint.
 
-> **Wallet type vs query chain:** Your wallet type determines how you authenticate. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried.
+> **Wallet type vs query chain:** Your wallet type determines how you authenticate. It does NOT restrict which chains you can query — a SIWE token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried.
 
 ## Base URL
 
@@ -51,10 +51,10 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 ### Stripe (credit card)
 
 1. **Choose payment method** → Stripe. See [wallet-bootstrap](wallet-bootstrap.md).
-2. **Set up a wallet** — Create or import an EVM or Solana wallet (needed for auth only — no funding required).
+2. **Set up an EVM wallet** — Create or import (needed for auth only — no funding required).
 3. **Create an auth token** — `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`
 4. **Obtain a SPT** — Collect card details via Stripe.js, then POST to `mpp.alchemy.com/mpp/spt` to get a Stripe Payment Token.
-5. **Send a request** — Include `Authorization: SIWE <token>` (or `SIWS`).
+5. **Send a request** — Include `Authorization: SIWE <token>`.
 6. **Handle 402** — Parse `WWW-Authenticate`, select the `stripe` challenge, create a credential with `mppx` using the SPT, retry with `Payment <credential>`.
 7. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
@@ -88,13 +88,10 @@ Required for collecting card details in the Stripe payment flow. Used to create 
 npm install @alchemy/x402
 ```
 
-Used for wallet management and SIWE/SIWS auth token generation (shared with the x402 flow, but with `--domain mpp.alchemy.com`):
+Used for wallet management and SIWE auth token generation (shared with the x402 flow, but with `--domain mpp.alchemy.com`):
 
 | CLI command | Purpose |
 |-------------|---------|
 | `npx @alchemy/x402 wallet generate` | Create a new EVM wallet |
-| `npx @alchemy/x402 wallet generate --architecture svm` | Create a new Solana wallet (Stripe only) |
 | `npx @alchemy/x402 wallet import` | Import / verify an EVM wallet |
-| `npx @alchemy/x402 wallet import --architecture svm` | Import / verify a Solana wallet (Stripe only) |
-| `npx @alchemy/x402 sign --private-key <key> --domain mpp.alchemy.com` | Generate a SIWE auth token (EVM) |
-| `npx @alchemy/x402 sign --architecture svm --private-key <key> --domain mpp.alchemy.com` | Generate a SIWS auth token (Solana, Stripe only) |
+| `npx @alchemy/x402 sign --private-key <key> --domain mpp.alchemy.com` | Generate a SIWE auth token |

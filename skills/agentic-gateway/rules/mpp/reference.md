@@ -15,7 +15,7 @@ Use standard Alchemy endpoints directly. No auth headers or payment needed.
 
 ### Without API Key (MPP gateway)
 
-All require SIWE or SIWS auth and MPP payment.
+All require SIWE auth and MPP payment.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -32,7 +32,7 @@ Chain-specific routes use the chain slug in the URL (e.g. `https://mpp.alchemy.c
 
 ## API Method Details
 
-The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`mpp.alchemy.com`) and include an `Authorization` header (`SIWE` or `SIWS` depending on wallet type).
+The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`mpp.alchemy.com`) and include an `Authorization` header (`SIWE`).
 
 | Gateway route | What to look up | Reference file |
 |---|---|---|
@@ -48,7 +48,7 @@ The gateway exposes the same API methods, parameters, and response formats as th
 
 ## Chain Network Slugs
 
-Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2` and `/nft/v3`). Any chain can be queried with either a SIWE or SIWS auth token — the chain URL is independent of wallet type.
+Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2` and `/nft/v3`). Any chain can be queried with a SIWE auth token — the chain URL is independent of wallet type.
 
 | Chain | Mainnet | Testnet |
 |-------|---------|---------|
@@ -90,14 +90,14 @@ The 402 response `methods` array will include `"stripe"` when Stripe is availabl
 
 | Header | Required | Description |
 |--------|----------|-------------|
-| `Authorization` | Yes | Auth: `SIWE <base64(siwe_message)>.<signature>` or `SIWS <base64(siws_message)>.<base58_signature>`. On payment: append `, Payment <credential>` |
-| `x-token` | Alternative | Send the SIWE/SIWS auth token here instead of `Authorization` when using the mppx SDK (see note below) |
+| `Authorization` | Yes | Auth: `SIWE <base64(siwe_message)>.<signature>`. On payment: append `, Payment <credential>` |
+| `x-token` | Alternative | Send the SIWE auth token here instead of `Authorization` when using the mppx SDK (see note below) |
 | `Content-Type` | Yes | `application/json` |
 | `Accept` | Recommended | `application/json` |
 
 ### Resolving the Authorization Header Conflict
 
-MPP uses the `Authorization` header for both SIWE/SIWS auth and payment credentials. This creates a conflict because the mppx SDK replaces the `Authorization` header with the payment credential on retry. Two approaches are supported:
+MPP uses the `Authorization` header for both SIWE auth and payment credentials. This creates a conflict because the mppx SDK replaces the `Authorization` header with the payment credential on retry. Two approaches are supported:
 
 1. **Multi-scheme Authorization (RFC 9110)** — Combine both in one header, comma-separated:
    ```
@@ -105,7 +105,7 @@ MPP uses the `Authorization` header for both SIWE/SIWS auth and payment credenti
    ```
    The gateway parses comma-separated schemes and extracts each one independently. This works for manual flows (curl, custom fetch).
 
-2. **`x-token` header (recommended for SDK usage)** — Send the SIWE/SIWS auth via the `x-token` header instead, freeing the `Authorization` header for the mppx SDK to manage:
+2. **`x-token` header (recommended for SDK usage)** — Send the SIWE auth via the `x-token` header instead, freeing the `Authorization` header for the mppx SDK to manage:
    ```
    x-token: SIWE <token>
    Authorization: Payment <credential>
@@ -125,8 +125,7 @@ MPP uses the `Authorization` header for both SIWE/SIWS auth and payment credenti
 | Status | Meaning |
 |--------|---------|
 | 200 | Request proxied successfully |
-| 401 | SIWE/SIWS authentication failed (see [authentication](authentication.md) for error codes) |
+| 401 | SIWE authentication failed (see [authentication](authentication.md) for error codes) |
 | 402 | Payment required — respond with a payment credential in the `Authorization` header |
 | 404 | Invalid chain network slug or route |
 | 500 | Internal gateway error |
-

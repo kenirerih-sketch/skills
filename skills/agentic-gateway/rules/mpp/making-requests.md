@@ -4,7 +4,7 @@ The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the 
 
 Use the `mppx` library to handle MPP payment flows programmatically. For authentication, use `@alchemy/x402` with `domain: "mpp.alchemy.com"`.
 
-> **Wallet type vs query chain:** Your wallet type determines which auth scheme (SIWE/SIWS) to use. The chain URL in your request is independent — you can query any supported chain with either wallet type.
+> **Wallet type vs query chain:** Your wallet type determines which auth scheme (SIWE) to use. The chain URL in your request is independent — you can query any supported chain.
 
 ## Using an EVM Wallet
 
@@ -77,78 +77,11 @@ if (response.status === 402) {
 }
 ```
 
-## Using a Solana Wallet
-
-```bash
-npm install mppx @alchemy/x402
-```
-
-```typescript
-import { signSiws } from "@alchemy/x402";
-import { Challenge, Credential } from "mppx";
-
-// Read private key from environment — never hardcode it
-const privateKey = process.env.PRIVATE_KEY as string; // base58-encoded
-
-// Generate auth token with MPP domain
-const siwsToken = await signSiws({
-  privateKey,
-  domain: "mpp.alchemy.com",
-});
-
-// Make a request
-const response = await fetch("https://mpp.alchemy.com/solana-mainnet/v2", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    Authorization: `SIWS ${siwsToken}`,
-  },
-  body: JSON.stringify({
-    id: 1,
-    jsonrpc: "2.0",
-    method: "getSlot",
-  }),
-});
-
-// Handle 402 Payment Required
-if (response.status === 402) {
-  const wwwAuthenticate = response.headers.get("WWW-Authenticate");
-  const challenges = Challenge.parse(wwwAuthenticate);
-
-  // Select challenge by payment method: "tempo" (EVM only) or "stripe"
-  // Note: Solana wallets can only use Stripe, not Tempo
-  const challenge = challenges.find(c => c.method === "stripe");
-
-  // Stripe: pass { spt } where spt is obtained via Stripe.js + /mpp/spt
-  // (see payment.md for the full Stripe.js → SPT → credential flow)
-  const credential = await Credential.create(challenge, { spt });
-  const serialized = Credential.serialize(credential);
-
-  const retryResponse = await fetch("https://mpp.alchemy.com/solana-mainnet/v2", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `SIWS ${siwsToken}, Payment ${serialized}`,
-    },
-    body: JSON.stringify({
-      id: 1,
-      jsonrpc: "2.0",
-      method: "getSlot",
-    }),
-  });
-
-  const result = await retryResponse.json();
-  // { id: 1, jsonrpc: "2.0", result: 123456789 }
-}
-```
-
 ## How It Works
 
 The MPP payment flow:
 
-1. Send the request with SIWE/SIWS auth (via `Authorization` or `x-token` header).
+1. Send the request with SIWE auth (via `Authorization` or `x-token` header).
 2. If **200** — return the result immediately. Response includes `X-Protocol-Version: mpp/1.0` and optionally `Payment-Receipt` headers.
 3. If **402** — read the `WWW-Authenticate` header, parse the challenge(s), create a payment credential using `mppx`, and **retry** with the credential. Two approaches:
    - **Manual/curl**: `Authorization: SIWE <token>, Payment <credential>` (multi-scheme, RFC 9110)
@@ -202,7 +135,7 @@ const response = await mppFetch("https://mpp.alchemy.com/eth-mainnet/v2", {
 
 ## REST API Endpoints (Prices, Portfolio, NFT)
 
-For REST API endpoints like `/prices/v1/tokens/historical`, use plain `fetch` with the `Authorization` header (`SIWE <token>` or `SIWS <token>` depending on your wallet type). The auto-payment wrapper above works with all endpoint types.
+For REST API endpoints like `/prices/v1/tokens/historical`, use plain `fetch` with the `Authorization` header (`SIWE <token>`). The auto-payment wrapper above works with all endpoint types.
 
 The auth token alone is sufficient for authentication on all endpoints once payment has been established.
 

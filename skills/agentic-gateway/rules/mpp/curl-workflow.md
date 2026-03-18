@@ -36,8 +36,6 @@ Skip all steps below — no wallet, auth token, or payment handling needed.
 
 Use `@alchemy/x402` for auth token generation and `mppx` for payment handling.
 
-> **Auth vs chain:** Your wallet type determines the auth scheme (`SIWE` for EVM wallets, `SIWS` for Solana wallets) and payment commands. The chain URL in each curl request is independent — use whichever chain you want to query.
-
 ### When to Use
 
 - Answering quick blockchain questions (latest block, ETH balance, token balance, NFT ownership, token prices, portfolio data)
@@ -54,25 +52,16 @@ Follow [wallet-bootstrap](wallet-bootstrap.md) before proceeding. Do NOT generat
 
 **Important:** Use `--domain mpp.alchemy.com` to target the MPP gateway.
 
-### EVM Path
-
 ```bash
 npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
 TOKEN=$(cat siwe-token.txt)
-```
-
-### Solana Path
-
-```bash
-npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt --domain mpp.alchemy.com > siws-token.txt
-TOKEN=$(cat siws-token.txt)
 ```
 
 > **Important:** Auth tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add token files to `.gitignore`.
 
 ### Step 2: Make API Calls with curl
 
-All gateway endpoints share the same base URL (`https://mpp.alchemy.com`) and auth pattern. The auth header depends on your wallet type, while the chain URL depends on what you're querying. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
+All gateway endpoints share the same base URL (`https://mpp.alchemy.com`) and auth pattern. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
 ---
 
@@ -81,8 +70,7 @@ All gateway endpoints share the same base URL (`https://mpp.alchemy.com`) and au
 #### Get the Latest Block Number (EVM chain)
 
 ```bash
-# Works with either SIWE or SIWS token
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -94,20 +82,19 @@ curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
 #### Get the Latest Slot (Solana chain)
 
 ```bash
-# Works with either SIWE or SIWS token
-TOKEN=$(cat siws-token.txt)  # or siwe-token.txt for EVM wallet
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -X POST "https://mpp.alchemy.com/solana-mainnet/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: SIWS $TOKEN" \
+  -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"getSlot"}'
 ```
 
 #### Get ETH Balance for an Address
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
   -H "Content-Type: application/json" \
@@ -119,12 +106,12 @@ curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
 #### Get SOL Balance for an Address
 
 ```bash
-TOKEN=$(cat siws-token.txt)  # or siwe-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -X POST "https://mpp.alchemy.com/solana-mainnet/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: SIWS $TOKEN" \
+  -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"getBalance","params":["83astBRguLMdt2h5U1Tbd2hpAXRC8gZDjX6BY1BV9Nc7"]}'
 ```
 
@@ -133,7 +120,7 @@ curl -s -X POST "https://mpp.alchemy.com/solana-mainnet/v2" \
 The `eth_call` method lets you call read-only contract functions. For ERC-20 `balanceOf`, the data is the function selector `0x70a08231` followed by the address padded to 32 bytes:
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 # USDC balanceOf(0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045) on Ethereum Mainnet
 # USDC contract: 0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
@@ -151,7 +138,7 @@ curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
 #### Get NFTs Owned by an Address
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -G "https://mpp.alchemy.com/eth-mainnet/nft/v3/getNFTsForOwner" \
   --data-urlencode "owner=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" \
@@ -168,7 +155,7 @@ curl -s -G "https://mpp.alchemy.com/eth-mainnet/nft/v3/getNFTsForOwner" \
 #### Get Token Prices by Symbol
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -G "https://mpp.alchemy.com/prices/v1/tokens/by-symbol" \
   --data-urlencode "symbols=ETH" \
@@ -177,7 +164,7 @@ curl -s -G "https://mpp.alchemy.com/prices/v1/tokens/by-symbol" \
   -H "Authorization: SIWE $TOKEN"
 ```
 
-> **Note:** Prices and Portfolio APIs are not chain-specific. Either a SIWE or SIWS token can be used for authentication — as can all other gateway endpoints.
+> **Note:** Prices and Portfolio APIs are not chain-specific. A SIWE token can be used for authentication — as can all other gateway endpoints.
 
 ---
 
@@ -186,7 +173,7 @@ curl -s -G "https://mpp.alchemy.com/prices/v1/tokens/by-symbol" \
 #### Get Token Balances Across Chains
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 
 curl -s -X POST "https://mpp.alchemy.com/data/v1/assets/tokens/by-address" \
   -H "Content-Type: application/json" \
@@ -206,14 +193,13 @@ For full details on both payment methods, see [payment](payment.md).
 #### Tempo (on-chain USDC)
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
+TOKEN=$(cat siwe-token.txt)
 CHAIN="eth-mainnet"  # Replace with any supported chain slug
-AUTH_SCHEME="SIWE"   # or SIWS for Solana wallet
 
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: $AUTH_SCHEME $TOKEN" \
+  -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
@@ -234,7 +220,7 @@ if [ "$HTTP_CODE" = "402" ]; then
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
+    -H "Authorization: SIWE $TOKEN, Payment $CREDENTIAL" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json
@@ -250,15 +236,14 @@ The Stripe flow requires a SPT (Stripe Payment Token), which is obtained by:
 Once you have the SPT, use it in the 402 flow:
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt for Solana wallet
+TOKEN=$(cat siwe-token.txt)
 CHAIN="eth-mainnet"  # Replace with any supported chain slug
-AUTH_SCHEME="SIWE"   # or SIWS for Solana wallet
 SPT="your_spt_token" # Obtained via Stripe.js + /mpp/spt endpoint
 
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: $AUTH_SCHEME $TOKEN" \
+  -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
@@ -277,7 +262,7 @@ if [ "$HTTP_CODE" = "402" ]; then
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
+    -H "Authorization: SIWE $TOKEN, Payment $CREDENTIAL" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json
@@ -288,17 +273,8 @@ fi
 
 If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the auth token has expired. Regenerate it:
 
-### EVM Path
-
 ```bash
 npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
-# Retry the request with the new token
-```
-
-### Solana Path
-
-```bash
-npx @alchemy/x402 sign --architecture svm --private-key ./wallet-key.txt --domain mpp.alchemy.com > siws-token.txt
 # Retry the request with the new token
 ```
 

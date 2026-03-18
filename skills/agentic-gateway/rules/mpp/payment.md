@@ -111,7 +111,7 @@ fi
 
 ## Stripe Payment (credit card)
 
-Stripe payments charge a credit card. No USDC funding is needed — the wallet is only used for SIWE/SIWS authentication. The Stripe flow involves three steps:
+Stripe payments charge a credit card. No USDC funding is needed — the wallet is only used for SIWE authentication. The Stripe flow involves three steps:
 
 1. **Collect card details** using Stripe.js to get a Stripe payment method ID
 2. **Exchange for SPT** — POST the payment method to `mpp.alchemy.com/mpp/spt` to receive a SPT (Stripe Payment Token)
@@ -135,7 +135,7 @@ const sptResponse = await fetch("https://mpp.alchemy.com/mpp/spt", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: `SIWE ${token}`, // or SIWS for Solana wallet
+    Authorization: `SIWE ${token}`,
   },
   body: JSON.stringify({
     paymentMethodId: paymentMethod.id,
@@ -167,9 +167,8 @@ const retryResponse = await fetch("https://mpp.alchemy.com/{chainNetwork}/v2", {
 The Stripe flow requires Stripe.js for card collection, which runs in a browser. For CLI/curl workflows, you can use a pre-obtained SPT token:
 
 ```bash
-TOKEN=$(cat siwe-token.txt)  # or siws-token.txt
+TOKEN=$(cat siwe-token.txt)
 CHAIN="eth-mainnet"
-AUTH_SCHEME="SIWE"  # or SIWS
 
 # Assuming SPT was obtained via Stripe.js + /mpp/spt endpoint
 SPT="your_spt_token"
@@ -177,7 +176,7 @@ SPT="your_spt_token"
 HTTP_CODE=$(curl -s -o response.json -D headers.txt -w "%{http_code}" -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
-  -H "Authorization: $AUTH_SCHEME $TOKEN" \
+  -H "Authorization: SIWE $TOKEN" \
   -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}')
 
 if [ "$HTTP_CODE" = "402" ]; then
@@ -196,7 +195,7 @@ if [ "$HTTP_CODE" = "402" ]; then
   curl -s -X POST "https://mpp.alchemy.com/$CHAIN/v2" \
     -H "Content-Type: application/json" \
     -H "Accept: application/json" \
-    -H "Authorization: $AUTH_SCHEME $TOKEN, Payment $CREDENTIAL" \
+    -H "Authorization: SIWE $TOKEN, Payment $CREDENTIAL" \
     -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
 else
   cat response.json

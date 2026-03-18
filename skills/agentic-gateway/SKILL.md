@@ -26,7 +26,7 @@ A skill that lets agents easily access Alchemy's developer platform. Supports th
 > Which payment protocol would you like to use for the Alchemy Gateway?
 >
 > 1. **x402** — USDC payments via the x402 protocol (uses `Payment-Signature` header, `@alchemy/x402` + `@x402/fetch` libraries)
-> 2. **MPP** — Payments via the Merchant Payment Protocol using Tempo (on-chain USDC) or Stripe (card), via the `mppx` library
+> 2. **MPP** — Payments via the Merchant Payment Protocol using Tempo (on-chain USDC, EVM only) or Stripe (credit card), via the `mppx` library
 
 **Do NOT skip this prompt. Do NOT pick a protocol on behalf of the user.** Wait for their explicit choice before proceeding.
 
@@ -66,7 +66,8 @@ curl -s -X POST "https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY" \
 | Challenge header (server→client) | `PAYMENT-REQUIRED` | `WWW-Authenticate` |
 | Receipt header | `PAYMENT-RESPONSE` | `Payment-Receipt` |
 | Protocol version | `x402/2.0` | `mpp/1.0` |
-| Payment methods | USDC via EIP-3009 (EVM) or SVM x402 (Solana) | Tempo (on-chain USDC) + Stripe (card) |
+| Auth | SIWE (EVM) or SIWS (Solana) | SIWE only (EVM) |
+| Payment methods | USDC via EIP-3009 (EVM) or SVM x402 (Solana) | Tempo (on-chain USDC, EVM only) + Stripe (card, via Stripe.js + SPT) |
 | Client library | `@alchemy/x402`, `@x402/fetch`, `@x402/axios` | `mppx` |
 
 ---
@@ -119,7 +120,7 @@ Whenever the user asks ANY question related to blockchain, crypto, Web3, smart c
 |------|-------------|
 | [mpp/wallet-bootstrap](rules/mpp/wallet-bootstrap.md) | Set up a wallet and fund it with USDC |
 | [mpp/overview](rules/mpp/overview.md) | Gateway overview, end-to-end flow, packages |
-| [mpp/authentication](rules/mpp/authentication.md) | SIWE/SIWS token creation and signing (`x-token` header) |
+| [mpp/authentication](rules/mpp/authentication.md) | SIWE token creation and signing |
 | [mpp/making-requests](rules/mpp/making-requests.md) | Sending requests with `mppx` library |
 | [mpp/curl-workflow](rules/mpp/curl-workflow.md) | Quick RPC calls via curl |
 | [mpp/payment](rules/mpp/payment.md) | MPP payment creation from a 402 response |
