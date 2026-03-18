@@ -13,9 +13,9 @@ Use standard Alchemy endpoints directly. No auth headers or payment needed.
 | Portfolio API | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/*` | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/tokens/by-address` |
 | Prices API | `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/*` | `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-symbol` |
 
-### Without API Key (x402 gateway)
+### Without API Key (MPP gateway)
 
-All require SIWE or SIWS auth and x402 payment.
+All require SIWE or SIWS auth and MPP payment.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -24,25 +24,25 @@ All require SIWE or SIWS auth and x402 payment.
 | `/data/v1/assets/*` | POST | [Portfolio API](https://www.alchemy.com/docs/reference/portfolio-apis) — multi-chain portfolio data (not chain-specific) |
 | `/prices/v1/tokens/*` | GET/POST | [Prices API](https://www.alchemy.com/docs/reference/prices-api-quickstart) — token prices, historical prices (GET for current by symbol, POST for by-address and historical) |
 
-**Base URL**: `https://x402.alchemy.com`
+**Base URL**: `https://mpp.alchemy.com`
 
-Chain-specific routes use the chain slug in the URL (e.g. `https://x402.alchemy.com/eth-mainnet/v2`). Non-chain-specific routes omit it (e.g. `https://x402.alchemy.com/data/v1/assets/tokens/by-address`).
+Chain-specific routes use the chain slug in the URL (e.g. `https://mpp.alchemy.com/eth-mainnet/v2`). Non-chain-specific routes omit it (e.g. `https://mpp.alchemy.com/data/v1/assets/tokens/by-address`).
 
 ---
 
 ## API Method Details
 
-The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`x402.alchemy.com`) and include an `Authorization` header (`SIWE` or `SIWS` depending on wallet type).
+The gateway exposes the same API methods, parameters, and response formats as the standard Alchemy APIs. All reference files below use gateway URLs (`mpp.alchemy.com`) and include an `Authorization` header (`SIWE` or `SIWS` depending on wallet type).
 
 | Gateway route | What to look up | Reference file |
 |---|---|---|
-| `/:chainNetwork/v2` | `eth_*` methods | [references/node-json-rpc.md](../references/node-json-rpc.md) |
-| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](../references/data-token-api.md) |
-| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](../references/data-transfers-api.md) |
-| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](../references/data-simulation-api.md) |
-| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](../references/data-nft-api.md) |
-| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](../references/data-prices-api.md) |
-| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](../references/data-portfolio-apis.md) |
+| `/:chainNetwork/v2` | `eth_*` methods | [references/node-json-rpc.md](../../references/node-json-rpc.md) |
+| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](../../references/data-token-api.md) |
+| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](../../references/data-transfers-api.md) |
+| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](../../references/data-simulation-api.md) |
+| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](../../references/data-nft-api.md) |
+| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](../../references/data-prices-api.md) |
+| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](../../references/data-portfolio-apis.md) |
 
 ---
 
@@ -69,35 +69,54 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 
 Payments are made on these networks (independent of which chain you're querying):
 
-### EVM Payment Networks
+### EVM Payment Networks (Tempo)
 
 | Network | CAIP-2 ID | USDC Address | EIP-712 Domain Name |
 |---------|-----------|--------------|---------------------|
 | Base Sepolia (testnet) | `eip155:84532` | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` | `USDC` |
 | Base Mainnet | `eip155:8453` | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` | `USD Coin` |
 
-### SVM Payment Networks
+### SVM Payment Networks (Tempo)
 
-Solana wallets pay with USDC on Solana. The payment network is determined by the 402 response `accepts` array; the CLI and `createSolanaPayment()` handle selection automatically.
+Solana wallets pay with USDC on Solana. The payment network is determined by the 402 challenge; the `mppx` library handles selection automatically.
 
-**Gateway receiving wallet (EVM)**: `0x658dc531A7FE637F7BA31C3dDd4C9bf8A27c81e5`
+### Stripe Payments
+
+When Stripe is enabled, card payments are available as an alternative to on-chain USDC. The 402 response `methods` array will include `"stripe"` when available.
 
 ## Request Headers (Client → Gateway)
 
 | Header | Required | Description |
 |--------|----------|-------------|
-| `Authorization` | Yes | EVM: `SIWE <base64(siwe_message)>.<signature>`; Solana: `SIWS <base64(siws_message)>.<base58_signature>` |
+| `Authorization` | Yes | Auth: `SIWE <base64(siwe_message)>.<signature>` or `SIWS <base64(siws_message)>.<base58_signature>`. On payment: append `, Payment <credential>` |
+| `x-token` | Alternative | Send the SIWE/SIWS auth token here instead of `Authorization` when using the mppx SDK (see note below) |
 | `Content-Type` | Yes | `application/json` |
 | `Accept` | Recommended | `application/json` |
-| `Payment-Signature` | On payment | Base64-encoded x402 payment payload |
+
+### Resolving the Authorization Header Conflict
+
+MPP uses the `Authorization` header for both SIWE/SIWS auth and payment credentials. This creates a conflict because the mppx SDK replaces the `Authorization` header with the payment credential on retry. Two approaches are supported:
+
+1. **Multi-scheme Authorization (RFC 9110)** — Combine both in one header, comma-separated:
+   ```
+   Authorization: SIWE <token>, Payment <credential>
+   ```
+   The gateway parses comma-separated schemes and extracts each one independently. This works for manual flows (curl, custom fetch).
+
+2. **`x-token` header (recommended for SDK usage)** — Send the SIWE/SIWS auth via the `x-token` header instead, freeing the `Authorization` header for the mppx SDK to manage:
+   ```
+   x-token: SIWE <token>
+   Authorization: Payment <credential>
+   ```
+   The gateway checks `x-token` first, then falls back to `Authorization` for auth extraction. **Use this approach when the mppx SDK handles the payment retry automatically**, since it will overwrite the `Authorization` header with the payment credential.
 
 ## Response Headers (Gateway → Client)
 
 | Header | When | Description |
 |--------|------|-------------|
-| `X-Protocol-Version` | Always on success | `x402/2.0` |
-| `PAYMENT-REQUIRED` | 402 responses | Encoded payment requirements |
-| `PAYMENT-RESPONSE` | After successful payment | Encoded settlement result (transaction hash, network, payer) |
+| `X-Protocol-Version` | Always on success | `mpp/1.0` |
+| `WWW-Authenticate` | 402 responses | Payment challenge(s) — one or more serialized MPP challenges |
+| `Payment-Receipt` | After successful payment | Serialized payment receipt (transaction reference, network) |
 
 ## HTTP Status Codes
 
@@ -105,7 +124,7 @@ Solana wallets pay with USDC on Solana. The payment network is determined by the
 |--------|---------|
 | 200 | Request proxied successfully |
 | 401 | SIWE/SIWS authentication failed (see [authentication](authentication.md) for error codes) |
-| 402 | Payment required — respond with a `Payment-Signature` header |
+| 402 | Payment required — respond with a payment credential in the `Authorization` header |
 | 404 | Invalid chain network slug or route |
 | 500 | Internal gateway error |
 
