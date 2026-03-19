@@ -13,9 +13,9 @@ MPP supports two payment methods. The user must choose one during setup (see [wa
 | Method | How it works | Wallet type | Wallet funding needed? |
 |--------|-------------|-------------|----------------------|
 | **Tempo** | On-chain USDC payment (gasless) | EVM only (SIWE) | Yes — wallet must hold USDC |
-| **Stripe** | Credit card via Stripe.js + SPT token | EVM | No — card is charged directly |
+| **Stripe** | Credit card via SPT (Shared Payment Token) | EVM | No — card is charged directly |
 
-Both methods require a wallet for SIWE authentication. Tempo additionally requires the EVM wallet to be funded with USDC. Stripe requires obtaining a SPT (Stripe Payment Token) via Stripe.js and the `/mpp/spt` endpoint.
+Both methods require a wallet for SIWE authentication. Tempo additionally requires the EVM wallet to be funded with USDC. Stripe uses a `createToken` callback that proxies through a server endpoint to create SPTs.
 
 > **Wallet type vs query chain:** Your wallet type determines how you authenticate. It does NOT restrict which chains you can query — a SIWE token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried.
 
@@ -44,7 +44,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 2. **Set up an EVM wallet** — Create or import (Tempo requires EVM/SIWE).
 3. **Fund the wallet** — Load USDC on an EVM network (e.g. Base Mainnet).
 4. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
-5. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [tempo({ account })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow is handled automatically. For manual handling, see [making-requests](making-requests.md).
+5. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [tempo.charge({ account })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow is handled automatically.
 6. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
 ### Stripe (credit card)
@@ -52,8 +52,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 1. **Choose payment method** → Stripe. See [wallet-bootstrap](wallet-bootstrap.md).
 2. **Set up an EVM wallet** — Create or import (needed for auth only — no funding required).
 3. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
-4. **Obtain a SPT** — Collect card details via Stripe.js, then POST to `mpp.alchemy.com/mpp/spt` to get a Stripe Payment Token.
-5. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [stripe({ spt })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow is handled automatically. For manual handling, see [making-requests](making-requests.md).
+4. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [stripe({ client: stripeJs, createToken, paymentMethod })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow and SPT creation are handled automatically via the `createToken` callback.
 6. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
 ## Packages

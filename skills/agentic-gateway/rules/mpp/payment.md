@@ -7,13 +7,15 @@ The `mppx/client` library handles 402 Payment Required flows automatically — y
 | Method | Description | Requirements |
 |--------|-------------|-------------|
 | **Tempo** | On-chain USDC payment (gasless, EVM only) | EVM wallet funded with USDC, SIWE auth |
-| **Stripe** | Credit card payment via Stripe.js + SPT token | Card details, EVM wallet for auth |
+| **Stripe** | Credit card payment via SPT (Shared Payment Token) | `createToken` callback proxied through a server, EVM wallet for auth |
 
 The user chooses their payment method during setup (see [wallet-bootstrap](wallet-bootstrap.md)).
 
 ## How It Works
 
 ### Tempo (on-chain USDC)
+
+`tempo.charge` takes a viem `account` and handles the full 402 flow: parsing the challenge, signing a TIP-20 transfer, and retrying with the credential.
 
 ```typescript
 import { Mppx, tempo } from "mppx/client";
@@ -22,7 +24,8 @@ import { privateKeyToAccount } from "viem/accounts";
 const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 
 const mppx = Mppx.create({
-  methods: [tempo({ account })],
+  methods: [tempo.charge({ account })],
+  polyfill: false,
 });
 
 // mppx.fetch auto-handles the 402 → challenge → credential → retry flow
@@ -38,43 +41,35 @@ const res = await mppx.fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
 
 ### Stripe (credit card)
 
-The Stripe flow requires obtaining a SPT (Stripe Payment Token) first:
-
-1. **Collect card details** using Stripe.js to get a Stripe payment method ID
-2. **Exchange for SPT** — POST the payment method to `mpp.alchemy.com/mpp/spt`
-
-```typescript
-import { loadStripe } from "@stripe/stripe-js";
-
-// Step 1: Collect card details via Stripe.js
-const stripeJs = await loadStripe("your_stripe_publishable_key");
-const { paymentMethod } = await stripeJs.createPaymentMethod({
-  type: "card",
-  card: cardElement,
-});
-
-// Step 2: Exchange for SPT token
-const sptResponse = await fetch("https://mpp.alchemy.com/mpp/spt", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `SIWE ${siweToken}`,
-  },
-  body: JSON.stringify({ paymentMethodId: paymentMethod.id }),
-});
-const { spt } = await sptResponse.json();
-```
-
-Then use the SPT with `mppx/client`:
+`stripe` (or `stripe.charge`) takes a `createToken` callback that proxies through a server endpoint to create SPTs. SPT creation requires a Stripe secret key, so it must happen server-side.
 
 ```typescript
 import { Mppx, stripe } from "mppx/client";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripeJs = (await loadStripe("pk_test_..."))!;
 
 const mppx = Mppx.create({
-  methods: [stripe({ spt })],
+  methods: [
+    stripe({
+      client: stripeJs,
+      createToken: async (params) => {
+        // Proxy through your server (requires Stripe secret key)
+        const res = await fetch("/api/create-spt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        });
+        if (!res.ok) throw new Error("Failed to create SPT");
+        return (await res.json()).spt;
+      },
+      paymentMethod: "pm_card_visa", // or omit to collect via Stripe Elements
+    }),
+  ],
+  polyfill: false,
 });
 
-// mppx.fetch auto-handles the 402 flow using the SPT
+// mppx.fetch auto-handles the 402 flow using the createToken callback
 const res = await mppx.fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
   method: "POST",
   headers: {
@@ -85,10 +80,49 @@ const res = await mppx.fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
 });
 ```
 
+### SPT creation server endpoint
+
+The `createToken` callback needs a server endpoint because SPT creation requires a Stripe secret key:
+
+```typescript
+// /api/create-spt
+export async function POST(request: Request) {
+  const { paymentMethod, amount, currency, expiresAt, networkId, metadata } =
+    await request.json();
+
+  const body = new URLSearchParams({
+    payment_method: paymentMethod,
+    "usage_limits[currency]": currency,
+    "usage_limits[max_amount]": amount,
+    "usage_limits[expires_at]": expiresAt.toString(),
+  });
+
+  const response = await fetch(
+    "https://api.stripe.com/v1/test_helpers/shared_payment/granted_tokens",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`${process.env.STRIPE_SECRET_KEY}:`)}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    return Response.json({ error: error.error.message }, { status: 400 });
+  }
+
+  const { id: spt } = await response.json();
+  return Response.json({ spt });
+}
+```
+
 ## Payment Details
 
-- **Tempo**: USDC (6 decimals), gasless on-chain payment on EVM networks. EVM wallet (SIWE) required.
-- **Stripe**: Card payment in USD, charged off-chain via Stripe.js → SPT → credential flow.
+- **Tempo**: On-chain TIP-20 token transfer on Tempo. Gasless when server uses `feePayer`. Settlement in ~500ms.
+- **Stripe**: Card payment via SPT. Settlement through Stripe's payment rails.
 - **Amount**: Determined by the gateway per request.
 - **Settlement**: The gateway verifies the credential and settles the payment automatically.
 
@@ -99,11 +133,8 @@ After a successful payment, the gateway includes a `Payment-Receipt` header in t
 ```typescript
 import { Receipt } from "mppx";
 
-const receiptHeader = response.headers.get("Payment-Receipt");
-if (receiptHeader) {
-  const receipt = Receipt.deserialize(receiptHeader);
-  console.log("Transaction:", receipt.reference);
-}
+const receipt = Receipt.fromResponse(response);
+console.log("Transaction:", receipt?.reference);
 ```
 
 ## Payment Error Responses
@@ -123,5 +154,5 @@ If a payment fails, the gateway returns 402 with the original challenge:
 Common issues:
 - **Insufficient USDC balance** (Tempo only) — fund the wallet with more USDC
 - **Card declined** (Stripe only) — use a different card
-- **Invalid SPT** (Stripe only) — the SPT may have expired; obtain a new one via `/mpp/spt`
+- **Invalid SPT** (Stripe only) — the SPT may have expired; the `createToken` callback will be called again on retry
 - **Unsupported payment method** — check the `methods` array; Stripe may not be enabled on this gateway
