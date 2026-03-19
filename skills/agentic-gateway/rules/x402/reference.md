@@ -36,13 +36,13 @@ The gateway exposes the same API methods, parameters, and response formats as th
 
 | Gateway route | What to look up | Reference file |
 |---|---|---|
-| `/:chainNetwork/v2` | `eth_*` methods | [references/node-json-rpc.md](../references/node-json-rpc.md) |
-| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](../references/data-token-api.md) |
-| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](../references/data-transfers-api.md) |
-| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](../references/data-simulation-api.md) |
-| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](../references/data-nft-api.md) |
-| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](../references/data-prices-api.md) |
-| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](../references/data-portfolio-apis.md) |
+| `/:chainNetwork/v2` | `eth_*` methods | [references/node-json-rpc.md](../../references/node-json-rpc.md) |
+| `/:chainNetwork/v2` | `alchemy_getTokenBalances`, `alchemy_getTokenMetadata`, `alchemy_getTokenAllowance` | [references/data-token-api.md](../../references/data-token-api.md) |
+| `/:chainNetwork/v2` | `alchemy_getAssetTransfers` | [references/data-transfers-api.md](../../references/data-transfers-api.md) |
+| `/:chainNetwork/v2` | `alchemy_simulateAssetChanges`, `alchemy_simulateExecution` | [references/data-simulation-api.md](../../references/data-simulation-api.md) |
+| `/:chainNetwork/nft/v3/*` | `getNFTsForOwner`, `getNFTMetadata`, etc. | [references/data-nft-api.md](../../references/data-nft-api.md) |
+| `/prices/v1/tokens/*` | `tokens/by-symbol`, `tokens/by-address`, `tokens/historical` | [references/data-prices-api.md](../../references/data-prices-api.md) |
+| `/data/v1/assets/*` | `assets/tokens/by-address`, `assets/nfts/by-address`, etc. | [references/data-portfolio-apis.md](../../references/data-portfolio-apis.md) |
 
 ---
 
@@ -59,7 +59,7 @@ Use these as the `:chainNetwork` path parameter for chain-specific routes (`/v2`
 | Arbitrum | `arb-mainnet` | `arb-sepolia` |
 | Optimism | `opt-mainnet` | `opt-sepolia` |
 | World Chain | `worldchain-mainnet` | `worldchain-sepolia` |
-| Tempo | `tempo-mainnet` | `tempo-testnet` |
+| Tempo | `tempo-mainnet` | `tempo-moderato` |
 | Hyperliquid | `hyperliquid-mainnet` | `hyperliquid-testnet` |
 | MegaETH | `megaeth-mainnet` | `megaeth-testnet` |
 | Monad | `monad-mainnet` | `monad-testnet` |

@@ -12,10 +12,11 @@ Traditional API key-based access to all Alchemy products: EVM JSON-RPC, Token AP
 - **Entry point**: [`skills/alchemy-api/SKILL.md`](skills/alchemy-api/SKILL.md)
 
 ### `skills/agentic-gateway`
-Lets agents easily access Alchemy's developer platform. Uses SIWE (Sign-In With Ethereum) authentication and x402 USDC payments.
+Lets agents easily access Alchemy's developer platform. Supports three access methods: API key, x402 protocol (USDC payments), or MPP protocol (Tempo/Stripe payments). Prompts the user to choose their preferred protocol.
 
-- **Auth**: SIWE token + x402 USDC payment
-- **Setup**: Generate a wallet and fund it with USDC
+- **Auth**: API key, or SIWE/SIWS token + payment (x402 or MPP)
+- **Protocols**: x402 (`@alchemy/x402` + `@x402/fetch`) or MPP (`mppx` + Tempo/Stripe)
+- **Setup**: API key, or generate a wallet and fund it with USDC
 - **Entry point**: [`skills/agentic-gateway/SKILL.md`](skills/agentic-gateway/SKILL.md)
 
 ## Which skill should I use?
@@ -26,7 +27,7 @@ Lets agents easily access Alchemy's developer platform. Uses SIWE (Sign-In With 
 | I'm building a traditional server or dApp | `alchemy-api` |
 | I'm an agent that needs easy access to Alchemy's developer platform | `agentic-gateway` |
 | I need API method details (params, responses) | `alchemy-api` (then cross-ref gateway URLs) |
-| I need SIWE auth or x402 payment setup | `agentic-gateway` |
+| I need SIWE auth or x402/MPP payment setup | `agentic-gateway` |
 
 ## Installation
 
