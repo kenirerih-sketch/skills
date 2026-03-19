@@ -34,7 +34,7 @@ Skip all steps below — no wallet, auth token, or payment handling needed.
 
 ## If `ALCHEMY_API_KEY` Is NOT Set (MPP Flow)
 
-Use `@alchemy/x402` for auth token generation and `mppx` for payment handling.
+Use `viem` for auth token generation and `mppx` for payment handling.
 
 ### When to Use
 
@@ -50,14 +50,33 @@ Follow [wallet-bootstrap](wallet-bootstrap.md) before proceeding. Do NOT generat
 
 ### Step 1: Generate an Auth Token
 
-**Important:** Use `--domain mpp.alchemy.com` to target the MPP gateway.
+**Important:** Use `domain: 'mpp.alchemy.com'` to target the MPP gateway.
 
 ```bash
-npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
+node -e "
+  const { createWalletClient, http } = require('viem');
+  const { privateKeyToAccount } = require('viem/accounts');
+  const { base } = require('viem/chains');
+  const { createSiweMessage, generateSiweNonce } = require('viem/siwe');
+  const fs = require('fs');
+  const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
+  const account = privateKeyToAccount(pk);
+  const message = createSiweMessage({
+    address: account.address, chainId: base.id,
+    domain: 'mpp.alchemy.com', nonce: generateSiweNonce(),
+    uri: 'https://mpp.alchemy.com', version: '1',
+    statement: 'Sign in to Alchemy Gateway',
+    expirationTime: new Date(Date.now() + 3600000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  client.signMessage({ message }).then(sig => {
+    process.stdout.write(Buffer.from(message).toString('base64') + '.' + sig);
+  });
+" > siwe-token.txt
 TOKEN=$(cat siwe-token.txt)
 ```
 
-> **Important:** Auth tokens expire after 1 hour by default. Use `--expires-after` to customize (e.g. `--expires-after 2h`). If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add token files to `.gitignore`.
+> **Important:** Auth tokens expire after 1 hour by default. Adjust the `expirationTime` in the script to customize. If you get a 401 `MESSAGE_EXPIRED` error, regenerate the token (see Step 4). Always add token files to `.gitignore`.
 
 ### Step 2: Make API Calls with curl
 
@@ -274,7 +293,26 @@ fi
 If curl returns HTTP 401 with `"code":"MESSAGE_EXPIRED"`, the auth token has expired. Regenerate it:
 
 ```bash
-npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
+node -e "
+  const { createWalletClient, http } = require('viem');
+  const { privateKeyToAccount } = require('viem/accounts');
+  const { base } = require('viem/chains');
+  const { createSiweMessage, generateSiweNonce } = require('viem/siwe');
+  const fs = require('fs');
+  const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
+  const account = privateKeyToAccount(pk);
+  const message = createSiweMessage({
+    address: account.address, chainId: base.id,
+    domain: 'mpp.alchemy.com', nonce: generateSiweNonce(),
+    uri: 'https://mpp.alchemy.com', version: '1',
+    statement: 'Sign in to Alchemy Gateway',
+    expirationTime: new Date(Date.now() + 3600000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  client.signMessage({ message }).then(sig => {
+    process.stdout.write(Buffer.from(message).toString('base64') + '.' + sig);
+  });
+" > siwe-token.txt
 # Retry the request with the new token
 ```
 

@@ -43,7 +43,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 1. **Choose payment method** → Tempo. See [wallet-bootstrap](wallet-bootstrap.md).
 2. **Set up an EVM wallet** — Create or import (Tempo requires EVM/SIWE).
 3. **Fund the wallet** — Load USDC on an EVM network (e.g. Base Mainnet).
-4. **Create an auth token** — `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`
+4. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
 5. **Send a request** — Include `Authorization: SIWE <token>`.
 6. **Handle 402** — Parse `WWW-Authenticate`, select the `tempo` challenge, create a credential with `mppx`, retry with `Payment <credential>`.
 7. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
@@ -52,7 +52,7 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 
 1. **Choose payment method** → Stripe. See [wallet-bootstrap](wallet-bootstrap.md).
 2. **Set up an EVM wallet** — Create or import (needed for auth only — no funding required).
-3. **Create an auth token** — `npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com`
+3. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
 4. **Obtain a SPT** — Collect card details via Stripe.js, then POST to `mpp.alchemy.com/mpp/spt` to get a Stripe Payment Token.
 5. **Send a request** — Include `Authorization: SIWE <token>`.
 6. **Handle 402** — Parse `WWW-Authenticate`, select the `stripe` challenge, create a credential with `mppx` using the SPT, retry with `Payment <credential>`.
@@ -82,16 +82,18 @@ npm install @stripe/stripe-js
 
 Required for collecting card details in the Stripe payment flow. Used to create a Stripe payment method, which is then exchanged for a SPT token.
 
-### `@alchemy/x402` — Wallet & Auth CLI
+### `viem` — Wallet & Auth Library
 
 ```bash
-npm install @alchemy/x402
+npm install viem
 ```
 
-Used for wallet management and SIWE auth token generation (shared with the x402 flow, but with `--domain mpp.alchemy.com`):
+Used for wallet management and SIWE auth token generation:
 
-| CLI command | Purpose |
-|-------------|---------|
-| `npx @alchemy/x402 wallet generate` | Create a new EVM wallet |
-| `npx @alchemy/x402 wallet import` | Import / verify an EVM wallet |
-| `npx @alchemy/x402 sign --private-key <key> --domain mpp.alchemy.com` | Generate a SIWE auth token |
+| Function | Import | Purpose |
+|----------|--------|---------|
+| `generatePrivateKey()` | `viem/accounts` | Create a new EVM private key |
+| `privateKeyToAccount(pk)` | `viem/accounts` | Import / derive address from a private key |
+| `createSiweMessage(...)` | `viem/siwe` | Construct a SIWE message for auth |
+| `generateSiweNonce()` | `viem/siwe` | Generate a random nonce for SIWE |
+| `createWalletClient(...)` | `viem` | Create a client to sign messages |

@@ -20,26 +20,36 @@ The gateway checks `x-token` first, then falls back to `Authorization` for auth 
 
 ## CLI: Generate an Auth Token
 
-For ad-hoc requests and curl workflows, use the `@alchemy/x402` CLI. **Important:** Use `--domain mpp.alchemy.com` to target the MPP gateway:
+For ad-hoc requests and curl workflows, use a Node.js script with `viem` to generate a SIWE token. **Important:** The domain must be `mpp.alchemy.com` to target the MPP gateway:
 
 ```bash
-npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com
+node -e "
+  const { createWalletClient, http } = require('viem');
+  const { privateKeyToAccount } = require('viem/accounts');
+  const { base } = require('viem/chains');
+  const { createSiweMessage, generateSiweNonce } = require('viem/siwe');
+  const fs = require('fs');
+  const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
+  const account = privateKeyToAccount(pk);
+  const message = createSiweMessage({
+    address: account.address, chainId: base.id,
+    domain: 'mpp.alchemy.com', nonce: generateSiweNonce(),
+    uri: 'https://mpp.alchemy.com', version: '1',
+    statement: 'Sign in to Alchemy Gateway',
+    expirationTime: new Date(Date.now() + 3600000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  client.signMessage({ message }).then(sig => {
+    process.stdout.write(Buffer.from(message).toString('base64') + '.' + sig);
+  });
+" > siwe-token.txt
 ```
 
-Options:
+> **Security:** Always read the private key from a file rather than passing it as a CLI argument to avoid exposing it in shell history and process listings.
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--private-key <key>` | (required) | Path to a key file (recommended) or hex private key |
-| `--domain <domain>` | `x402.alchemy.com` | Gateway domain — **must be `mpp.alchemy.com`** for MPP |
-| `--expires-after <duration>` | `1h` | Token lifetime (e.g. `30m`, `2h`, `7d`) |
-
-> **Security:** Always pass a file path rather than a raw key to avoid exposing the private key in shell history and process listings.
-
-The command prints the encoded token to stdout. Pipe it to a file to avoid terminal exposure:
+The script prints the encoded token to stdout. Pipe it to a file to avoid terminal exposure:
 
 ```bash
-npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
 TOKEN=$(cat siwe-token.txt)
 
 # The chain URL is independent of wallet type — you can query any chain
@@ -51,21 +61,40 @@ curl -s -X POST "https://mpp.alchemy.com/eth-mainnet/v2" \
 
 ## Library: Generate a Token in Code
 
-For applications, use the `signSiwe` function from `@alchemy/x402`. Read the private key from an environment variable — never hardcode it. **Important:** Pass `domain: "mpp.alchemy.com"` to target the MPP gateway:
+For applications, use `viem` to generate a SIWE token. Read the private key from an environment variable — never hardcode it. **Important:** Use `domain: "mpp.alchemy.com"` to target the MPP gateway:
 
 ```bash
-npm install @alchemy/x402
+npm install viem
 ```
 
 ```typescript
-import { signSiwe } from "@alchemy/x402";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
+import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 
 const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-const siweToken = await signSiwe({
-  privateKey,
+const account = privateKeyToAccount(privateKey);
+
+const message = createSiweMessage({
+  address: account.address,
+  chainId: base.id,
   domain: "mpp.alchemy.com",
-  expiresAfter: "1h", // optional, default "1h"
+  nonce: generateSiweNonce(),
+  uri: "https://mpp.alchemy.com",
+  version: "1",
+  statement: "Sign in to Alchemy Gateway",
+  expirationTime: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
 });
+
+const client = createWalletClient({
+  account,
+  chain: base,
+  transport: http(),
+});
+
+const signature = await client.signMessage({ message });
+const siweToken = `${btoa(message)}.${signature}`;
 
 // Use in requests
 const headers = { Authorization: `SIWE ${siweToken}` };
@@ -102,9 +131,9 @@ When authentication fails, the gateway returns HTTP 401 with a JSON body:
 |------|-------|------------|
 | `MISSING_AUTH` | No `Authorization` header provided | Add `Authorization: SIWE <token>` header |
 | `INVALID_AUTH_FORMAT` | Token is not in `base64.signature` format or Base64 decoding failed | Ensure the token is `base64(message).signature` with exactly one `.` separator |
-| `INVALID_SIWE` | SIWE message could not be parsed | Regenerate the token using the CLI or `signSiwe()` |
+| `INVALID_SIWE` | SIWE message could not be parsed | Regenerate the token using the viem-based signing script |
 | `INVALID_SIGNATURE` | Signature does not match the message signer | Ensure the correct private key is being used |
-| `INVALID_DOMAIN` | Message domain does not match `mpp.alchemy.com` | Ensure `--domain mpp.alchemy.com` is passed to the sign command, or `domain: "mpp.alchemy.com"` in code |
+| `INVALID_DOMAIN` | Message domain does not match `mpp.alchemy.com` | Ensure `domain: "mpp.alchemy.com"` is passed in the `createSiweMessage` call |
 | `MESSAGE_EXPIRED` | Message `expirationTime` has passed or `notBefore` is in the future | Generate a new token — the current one has expired |
 
 ## Handling Auth Errors
@@ -113,15 +142,37 @@ If you receive a 401 response, parse the `code` field and take the appropriate a
 
 - **Regenerable errors** (`MESSAGE_EXPIRED`): Generate a fresh token and retry the request.
 - **Configuration errors** (`INVALID_DOMAIN`, `MISSING_AUTH`, `INVALID_AUTH_FORMAT`): Fix the token generation code — these will not resolve by retrying.
-- **Signing errors** (`INVALID_SIGNATURE`, `INVALID_SIWE`): The token is malformed. Regenerate using the CLI or `signSiwe()`.
+- **Signing errors** (`INVALID_SIGNATURE`, `INVALID_SIWE`): The token is malformed. Regenerate using the viem-based signing code.
 
 ```typescript
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
+import { createSiweMessage, generateSiweNonce } from "viem/siwe";
+
+async function generateSiweToken(privateKey: `0x${string}`): Promise<string> {
+  const account = privateKeyToAccount(privateKey);
+  const message = createSiweMessage({
+    address: account.address,
+    chainId: base.id,
+    domain: "mpp.alchemy.com",
+    nonce: generateSiweNonce(),
+    uri: "https://mpp.alchemy.com",
+    version: "1",
+    statement: "Sign in to Alchemy Gateway",
+    expirationTime: new Date(Date.now() + 60 * 60 * 1000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  const signature = await client.signMessage({ message });
+  return `${btoa(message)}.${signature}`;
+}
+
 if (response.status === 401) {
   const body = await response.json();
 
   if (body.code === "MESSAGE_EXPIRED") {
     // Token expired — regenerate and retry
-    const newToken = await signSiwe({ privateKey, domain: "mpp.alchemy.com" });
+    const newToken = await generateSiweToken(privateKey);
     // retry request with new token...
   } else {
     // Configuration or signing error — do not retry, fix the code

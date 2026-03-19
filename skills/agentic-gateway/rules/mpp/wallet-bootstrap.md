@@ -65,7 +65,7 @@ cp /path/to/keyfile wallet-key.txt
 Verify the imported key:
 
 ```bash
-npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
+node -e "const { privateKeyToAccount } = require('viem/accounts'); const fs = require('fs'); const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim(); console.log(JSON.stringify({ address: privateKeyToAccount(pk).address }));"
 ```
 
 Add the key file to `.gitignore`:
@@ -77,9 +77,9 @@ echo "wallet-key.txt" >> .gitignore
 ### Path C: Create a New Wallet
 
 ```bash
-npx @alchemy/x402 wallet generate | jq -r .privateKey > wallet-key.txt
+node -e "const { generatePrivateKey } = require('viem/accounts'); process.stdout.write(generatePrivateKey());" > wallet-key.txt
 echo "wallet-key.txt" >> .gitignore
-npx @alchemy/x402 wallet import --private-key ./wallet-key.txt
+node -e "const { privateKeyToAccount } = require('viem/accounts'); const fs = require('fs'); const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim(); console.log(JSON.stringify({ address: privateKeyToAccount(pk).address }));"
 ```
 
 > **Important:** Never run `wallet generate` without piping to a file — it prints the private key to stdout.
@@ -99,7 +99,26 @@ Tempo requires USDC on an EVM network (e.g. Base Mainnet). Transfer USDC to the 
 Generate a SIWE auth token for the MPP gateway. This is required for **both** Tempo and Stripe.
 
 ```bash
-npx @alchemy/x402 sign --private-key ./wallet-key.txt --domain mpp.alchemy.com > siwe-token.txt
+node -e "
+  const { createWalletClient, http } = require('viem');
+  const { privateKeyToAccount } = require('viem/accounts');
+  const { base } = require('viem/chains');
+  const { createSiweMessage, generateSiweNonce } = require('viem/siwe');
+  const fs = require('fs');
+  const pk = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
+  const account = privateKeyToAccount(pk);
+  const message = createSiweMessage({
+    address: account.address, chainId: base.id,
+    domain: 'mpp.alchemy.com', nonce: generateSiweNonce(),
+    uri: 'https://mpp.alchemy.com', version: '1',
+    statement: 'Sign in to Alchemy Gateway',
+    expirationTime: new Date(Date.now() + 3600000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  client.signMessage({ message }).then(sig => {
+    process.stdout.write(Buffer.from(message).toString('base64') + '.' + sig);
+  });
+" > siwe-token.txt
 ```
 
 Proceed to [making-requests](making-requests.md) or [curl-workflow](curl-workflow.md).
@@ -108,14 +127,16 @@ Proceed to [making-requests](making-requests.md) or [curl-workflow](curl-workflo
 
 ## Using the Wallet in Code
 
-For building applications, use the `@alchemy/x402` library for wallet management and `mppx` for payments. Always read the private key from an environment variable — never hardcode it in source files:
+For building applications, use `viem` for wallet management and `mppx` for payments. Always read the private key from an environment variable — never hardcode it in source files:
 
 ```typescript
-import { generateWallet, getWalletAddress } from "@alchemy/x402";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
-const wallet = generateWallet();
-// wallet.address → "0x..."
+const privateKey = generatePrivateKey();
+const account = privateKeyToAccount(privateKey);
+// account.address → "0x..."
 
-const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-const address = getWalletAddress(privateKey);
+const existingKey = process.env.PRIVATE_KEY as `0x${string}`;
+const existingAccount = privateKeyToAccount(existingKey);
+// existingAccount.address → "0x..."
 ```

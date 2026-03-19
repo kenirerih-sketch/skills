@@ -68,7 +68,7 @@ curl -s -X POST "https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY" \
 | Protocol version | `x402/2.0` | `mpp/1.0` |
 | Auth | SIWE (EVM) or SIWS (Solana) | SIWE only (EVM) |
 | Payment methods | USDC via EIP-3009 (EVM) or SVM x402 (Solana) | Tempo (on-chain USDC, EVM only) + Stripe (card, via Stripe.js + SPT) |
-| Client library | `@alchemy/x402`, `@x402/fetch`, `@x402/axios` | `mppx` |
+| Client library | `@alchemy/x402`, `@x402/fetch`, `@x402/axios` | `mppx`, `viem` |
 
 ---
 

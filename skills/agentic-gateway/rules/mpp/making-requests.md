@@ -2,28 +2,47 @@
 
 The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the same auth and MPP payment flow. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
-Use the `mppx` library to handle MPP payment flows programmatically. For authentication, use `@alchemy/x402` with `domain: "mpp.alchemy.com"`.
+Use the `mppx` library to handle MPP payment flows programmatically. For authentication, use `viem` to generate SIWE tokens with `domain: "mpp.alchemy.com"`.
 
 > **Wallet type vs query chain:** Your wallet type determines which auth scheme (SIWE) to use. The chain URL in your request is independent — you can query any supported chain.
 
 ## Using an EVM Wallet
 
 ```bash
-npm install mppx @alchemy/x402
+npm install mppx viem
 ```
 
 ```typescript
-import { signSiwe } from "@alchemy/x402";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
+import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 import { Challenge, Credential } from "mppx";
 
 // Read private key from environment — never hardcode it
 const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+const account = privateKeyToAccount(privateKey);
 
 // Generate auth token with MPP domain
-const siweToken = await signSiwe({
-  privateKey,
+const message = createSiweMessage({
+  address: account.address,
+  chainId: base.id,
   domain: "mpp.alchemy.com",
+  nonce: generateSiweNonce(),
+  uri: "https://mpp.alchemy.com",
+  version: "1",
+  statement: "Sign in to Alchemy Gateway",
+  expirationTime: new Date(Date.now() + 60 * 60 * 1000),
 });
+
+const walletClient = createWalletClient({
+  account,
+  chain: base,
+  transport: http(),
+});
+
+const signature = await walletClient.signMessage({ message });
+const siweToken = `${btoa(message)}.${signature}`;
 
 // Make a request
 const response = await fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
@@ -93,8 +112,28 @@ The MPP payment flow:
 You can create a reusable wrapper that handles the 402 flow automatically. Uses the `x-token` header for auth so the mppx SDK can freely manage `Authorization` for payment credentials:
 
 ```typescript
-import { signSiwe } from "@alchemy/x402";
+import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
+import { createSiweMessage, generateSiweNonce } from "viem/siwe";
 import { Challenge, Credential } from "mppx";
+
+async function generateSiweToken(privateKey: `0x${string}`): Promise<string> {
+  const account = privateKeyToAccount(privateKey);
+  const message = createSiweMessage({
+    address: account.address,
+    chainId: base.id,
+    domain: "mpp.alchemy.com",
+    nonce: generateSiweNonce(),
+    uri: "https://mpp.alchemy.com",
+    version: "1",
+    statement: "Sign in to Alchemy Gateway",
+    expirationTime: new Date(Date.now() + 60 * 60 * 1000),
+  });
+  const client = createWalletClient({ account, chain: base, transport: http() });
+  const signature = await client.signMessage({ message });
+  return `${btoa(message)}.${signature}`;
+}
 
 function createMppFetch(privateKey: `0x${string}`, siweToken: string) {
   return async (input: RequestInfo, init?: RequestInit): Promise<Response> => {
@@ -123,7 +162,7 @@ function createMppFetch(privateKey: `0x${string}`, siweToken: string) {
 
 // Usage
 const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-const token = await signSiwe({ privateKey, domain: "mpp.alchemy.com" });
+const token = await generateSiweToken(privateKey);
 const mppFetch = createMppFetch(privateKey, token);
 
 const response = await mppFetch("https://mpp.alchemy.com/eth-mainnet/v2", {
