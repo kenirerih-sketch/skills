@@ -1,5 +1,7 @@
 # MPP Payment
 
+> **Recommended:** Use `mppx/client` to handle 402 flows automatically — see [making-requests](making-requests.md). The manual flow below is for advanced use cases where you need direct control over challenge parsing and credential creation.
+
 When the gateway returns **402**, you must create an MPP payment credential and retry the request. The 402 response includes a `WWW-Authenticate` header containing one or more payment challenges — one per available payment method.
 
 ## Payment Methods
@@ -45,15 +47,14 @@ Tempo payments use on-chain USDC on EVM networks. The wallet must be an EVM wall
 ```typescript
 import { Challenge, Credential } from "mppx";
 
-// Extract the WWW-Authenticate header from the 402 response
-const wwwAuthenticate = response.headers.get("WWW-Authenticate");
-const challenges = Challenge.parse(wwwAuthenticate);
+// Extract challenges from the 402 response headers
+const challenges = Challenge.fromHeaders(response.headers);
 
 // Select the Tempo challenge
 const tempoChallenge = challenges.find(c => c.method === "tempo");
 
 // Create a credential — signs a USDC payment authorization with your EVM wallet
-const credential = await Credential.create(tempoChallenge, {
+const credential = await Credential.from(tempoChallenge, {
   privateKey: process.env.PRIVATE_KEY,
 });
 
@@ -89,10 +90,10 @@ if [ "$HTTP_CODE" = "402" ]; then
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const fs = require('fs');
-    const challenges = Challenge.parse(process.argv[1]);
+    const challenges = Challenge.fromHeaders(new Headers({ 'WWW-Authenticate': process.argv[1] }));
     const tempo = challenges.find(c => c.method === 'tempo');
     const privateKey = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
-    Credential.create(tempo, { privateKey }).then(c => {
+    Credential.from(tempo, { privateKey }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH")
@@ -144,11 +145,10 @@ const sptResponse = await fetch("https://mpp.alchemy.com/mpp/spt", {
 const { spt } = await sptResponse.json();
 
 // Step 3: Use SPT to create credential from the 402 challenge
-const wwwAuthenticate = response.headers.get("WWW-Authenticate");
-const challenges = Challenge.parse(wwwAuthenticate);
+const challenges = Challenge.fromHeaders(response.headers);
 const stripeChallenge = challenges.find(c => c.method === "stripe");
 
-const credential = await Credential.create(stripeChallenge, { spt });
+const credential = await Credential.from(stripeChallenge, { spt });
 const serialized = Credential.serialize(credential);
 
 // Retry with the payment credential
@@ -185,9 +185,9 @@ if [ "$HTTP_CODE" = "402" ]; then
   # Select the Stripe challenge and create credential using SPT
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
-    const challenges = Challenge.parse(process.argv[1]);
+    const challenges = Challenge.fromHeaders(new Headers({ 'WWW-Authenticate': process.argv[1] }));
     const stripe = challenges.find(c => c.method === 'stripe');
-    Credential.create(stripe, { spt: process.argv[2] }).then(c => {
+    Credential.from(stripe, { spt: process.argv[2] }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH" "$SPT")

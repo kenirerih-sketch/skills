@@ -2,11 +2,113 @@
 
 The gateway supports JSON-RPC, NFT, Prices, and Portfolio APIs — all with the same auth and MPP payment flow. See [reference](reference.md) for the full list of supported endpoints, chain network slugs, and API methods.
 
-Use the `mppx` library to handle MPP payment flows programmatically. For authentication, use `viem` to generate SIWE tokens with `domain: "mpp.alchemy.com"`.
-
 > **Wallet type vs query chain:** Your wallet type determines which auth scheme (SIWE) to use. The chain URL in your request is independent — you can query any supported chain.
 
-## Using an EVM Wallet
+## Recommended: `mppx/client` (Auto-Payment)
+
+The easiest way to make requests is with `mppx/client`, which automatically handles the 402 payment flow. This is the recommended approach for most users.
+
+```bash
+npm install mppx viem
+```
+
+### Tempo (on-chain USDC)
+
+```typescript
+import { Mppx, tempo } from "mppx/client";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, http } from "viem";
+import { base } from "viem/chains";
+import { createSiweMessage, generateSiweNonce } from "viem/siwe";
+
+// Read private key from environment — never hardcode it
+const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+const account = privateKeyToAccount(privateKey);
+
+// Generate auth token with MPP domain
+const message = createSiweMessage({
+  address: account.address,
+  chainId: base.id,
+  domain: "mpp.alchemy.com",
+  nonce: generateSiweNonce(),
+  uri: "https://mpp.alchemy.com",
+  version: "1",
+  statement: "Sign in to Alchemy Gateway",
+  expirationTime: new Date(Date.now() + 60 * 60 * 1000),
+});
+
+const walletClient = createWalletClient({
+  account,
+  chain: base,
+  transport: http(),
+});
+
+const signature = await walletClient.signMessage({ message });
+const siweToken = `${btoa(message)}.${signature}`;
+
+// Create mppx client with Tempo payment method
+const mppx = Mppx.create({
+  methods: [tempo({ account })],
+});
+
+// This fetch auto-handles 402 Payment Required
+// IMPORTANT: Use x-token for SIWE auth because mppx manages the Authorization header
+const res = await mppx.fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-token": `SIWE ${siweToken}`,
+  },
+  body: JSON.stringify({
+    id: 1,
+    jsonrpc: "2.0",
+    method: "eth_blockNumber",
+  }),
+});
+
+const result = await res.json();
+// { id: 1, jsonrpc: "2.0", result: "0x134e82c" }
+```
+
+### Stripe (credit card)
+
+```typescript
+import { Mppx, stripe } from "mppx/client";
+
+// spt is obtained via Stripe.js + /mpp/spt endpoint (see payment.md)
+const mppx = Mppx.create({
+  methods: [stripe({ spt })],
+});
+
+// IMPORTANT: Use x-token for SIWE auth because mppx manages the Authorization header
+const res = await mppx.fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-token": `SIWE ${siweToken}`,
+  },
+  body: JSON.stringify({
+    id: 1,
+    jsonrpc: "2.0",
+    method: "eth_blockNumber",
+  }),
+});
+```
+
+> **Important: `x-token` header.** When using `mppx/client`, SIWE auth must go via the `x-token` header (not `Authorization`) because `mppx` manages the `Authorization` header for payment credentials.
+
+## How It Works
+
+The MPP payment flow:
+
+1. Send the request with SIWE auth (via `Authorization` or `x-token` header).
+2. If **200** — return the result immediately. Response includes `X-Protocol-Version: mpp/1.0` and optionally `Payment-Receipt` headers.
+3. If **402** — `mppx/client` automatically reads the `WWW-Authenticate` header, parses the challenge(s), creates a payment credential, and retries with the credential. If handling manually, see below.
+4. Subsequent calls with the same auth token return 200 without payment.
+
+## Manual Flow (Advanced)
+
+For advanced use cases where you need direct control over the 402 flow, you can handle challenges manually using the low-level `mppx` API.
 
 ```bash
 npm install mppx viem
@@ -61,8 +163,7 @@ const response = await fetch("https://mpp.alchemy.com/eth-mainnet/v2", {
 
 // Handle 402 Payment Required
 if (response.status === 402) {
-  const wwwAuthenticate = response.headers.get("WWW-Authenticate");
-  const challenges = Challenge.parse(wwwAuthenticate);
+  const challenges = Challenge.fromResponseList(response);
 
   // Select the challenge matching the user's chosen payment method:
   // - Tempo (on-chain USDC, EVM only): challenges.find(c => c.method === "tempo")
@@ -73,7 +174,7 @@ if (response.status === 402) {
   // For Tempo: pass { privateKey } to sign a USDC payment
   // For Stripe: pass { spt } where spt is obtained via Stripe.js + /mpp/spt
   //   (see payment.md for the full Stripe.js → SPT → credential flow)
-  const credential = await Credential.create(challenge, { privateKey });
+  const credential = await Credential.from(challenge, { privateKey });
   const serialized = Credential.serialize(credential);
 
   // Retry with payment
@@ -96,85 +197,9 @@ if (response.status === 402) {
 }
 ```
 
-## How It Works
-
-The MPP payment flow:
-
-1. Send the request with SIWE auth (via `Authorization` or `x-token` header).
-2. If **200** — return the result immediately. Response includes `X-Protocol-Version: mpp/1.0` and optionally `Payment-Receipt` headers.
-3. If **402** — read the `WWW-Authenticate` header, parse the challenge(s), create a payment credential using `mppx`, and **retry** with the credential. Two approaches:
-   - **Manual/curl**: `Authorization: SIWE <token>, Payment <credential>` (multi-scheme, RFC 9110)
-   - **SDK**: Send auth via `x-token: SIWE <token>` and let the mppx SDK use `Authorization` for the payment credential
-4. Subsequent calls with the same auth token return 200 without payment.
-
-## Helper: Auto-Payment Wrapper
-
-You can create a reusable wrapper that handles the 402 flow automatically. Uses the `x-token` header for auth so the mppx SDK can freely manage `Authorization` for payment credentials:
-
-```typescript
-import { createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { base } from "viem/chains";
-import { createSiweMessage, generateSiweNonce } from "viem/siwe";
-import { Challenge, Credential } from "mppx";
-
-async function generateSiweToken(privateKey: `0x${string}`): Promise<string> {
-  const account = privateKeyToAccount(privateKey);
-  const message = createSiweMessage({
-    address: account.address,
-    chainId: base.id,
-    domain: "mpp.alchemy.com",
-    nonce: generateSiweNonce(),
-    uri: "https://mpp.alchemy.com",
-    version: "1",
-    statement: "Sign in to Alchemy Gateway",
-    expirationTime: new Date(Date.now() + 60 * 60 * 1000),
-  });
-  const client = createWalletClient({ account, chain: base, transport: http() });
-  const signature = await client.signMessage({ message });
-  return `${btoa(message)}.${signature}`;
-}
-
-function createMppFetch(privateKey: `0x${string}`, siweToken: string) {
-  return async (input: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const headers = new Headers(init?.headers);
-    // Use x-token for auth to avoid conflict with mppx SDK's Authorization usage
-    headers.set("x-token", `SIWE ${siweToken}`);
-
-    const response = await fetch(input, { ...init, headers });
-
-    if (response.status === 402) {
-      const wwwAuth = response.headers.get("WWW-Authenticate");
-      if (!wwwAuth) return response;
-
-      const challenges = Challenge.parse(wwwAuth);
-      const credential = await Credential.create(challenges[0], { privateKey });
-      const serialized = Credential.serialize(credential);
-
-      // mppx SDK sets Authorization with the payment credential
-      headers.set("Authorization", `Payment ${serialized}`);
-      return fetch(input, { ...init, headers });
-    }
-
-    return response;
-  };
-}
-
-// Usage
-const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
-const token = await generateSiweToken(privateKey);
-const mppFetch = createMppFetch(privateKey, token);
-
-const response = await mppFetch("https://mpp.alchemy.com/eth-mainnet/v2", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ id: 1, jsonrpc: "2.0", method: "eth_blockNumber" }),
-});
-```
-
 ## REST API Endpoints (Prices, Portfolio, NFT)
 
-For REST API endpoints like `/prices/v1/tokens/historical`, use plain `fetch` with the `Authorization` header (`SIWE <token>`). The auto-payment wrapper above works with all endpoint types.
+For REST API endpoints like `/prices/v1/tokens/historical`, use `mppx.fetch` (recommended) or plain `fetch` with the `Authorization` header (`SIWE <token>`). The `mppx/client` approach works with all endpoint types.
 
 The auth token alone is sufficient for authentication on all endpoints once payment has been established.
 

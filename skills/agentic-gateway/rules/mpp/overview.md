@@ -44,9 +44,8 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 2. **Set up an EVM wallet** — Create or import (Tempo requires EVM/SIWE).
 3. **Fund the wallet** — Load USDC on an EVM network (e.g. Base Mainnet).
 4. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
-5. **Send a request** — Include `Authorization: SIWE <token>`.
-6. **Handle 402** — Parse `WWW-Authenticate`, select the `tempo` challenge, create a credential with `mppx`, retry with `Payment <credential>`.
-7. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
+5. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [tempo({ account })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow is handled automatically. For manual handling, see [making-requests](making-requests.md).
+6. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
 ### Stripe (credit card)
 
@@ -54,9 +53,8 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 2. **Set up an EVM wallet** — Create or import (needed for auth only — no funding required).
 3. **Create an auth token** — Generate a SIWE token using `viem` (see [authentication](authentication.md))
 4. **Obtain a SPT** — Collect card details via Stripe.js, then POST to `mpp.alchemy.com/mpp/spt` to get a Stripe Payment Token.
-5. **Send a request** — Include `Authorization: SIWE <token>`.
-6. **Handle 402** — Parse `WWW-Authenticate`, select the `stripe` challenge, create a credential with `mppx` using the SPT, retry with `Payment <credential>`.
-7. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
+5. **Send a request** — Use `mppx/client` (recommended): create `Mppx.create({ methods: [stripe({ spt })] })` and call `mppx.fetch()` with `x-token: SIWE <token>`. The 402 flow is handled automatically. For manual handling, see [making-requests](making-requests.md).
+6. **Receive the result** — Response includes `X-Protocol-Version: mpp/1.0` and `Payment-Receipt`.
 
 ## Packages
 
@@ -66,12 +64,24 @@ See [reference](reference.md) for all endpoints, supported chains, and available
 npm install mppx
 ```
 
-Provides client-side utilities for handling MPP payment challenges and creating payment credentials:
+#### `mppx/client` — High-Level Client (recommended for most users)
+
+Auto-handles the 402 payment flow. When using `mppx/client`, SIWE auth must go via the `x-token` header (not `Authorization`) because `mppx` manages the `Authorization` header for payment credentials.
 
 | Export | Purpose |
 |--------|---------|
-| `Challenge` | Parse and inspect `WWW-Authenticate` challenges |
-| `Credential` | Create and serialize payment credentials |
+| `Mppx` | Client with `fetch()` that auto-handles 402 challenges |
+| `tempo` | Payment method factory for on-chain USDC (Tempo) |
+| `stripe` | Payment method factory for credit card (Stripe) |
+
+#### `mppx` — Low-Level Utilities (advanced use cases)
+
+For manual control over the 402 flow:
+
+| Export | Purpose |
+|--------|---------|
+| `Challenge` | Parse and inspect `WWW-Authenticate` challenges (`Challenge.fromResponseList(response)` or `Challenge.fromHeaders(headers)`) |
+| `Credential` | Create and serialize payment credentials (`Credential.from(challenge, opts)`, `Credential.serialize(cred)`) |
 | `Receipt` | Parse `Payment-Receipt` headers |
 
 ### `@stripe/stripe-js` — Stripe.js (for Stripe payments)

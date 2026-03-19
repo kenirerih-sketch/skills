@@ -228,10 +228,10 @@ if [ "$HTTP_CODE" = "402" ]; then
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
     const fs = require('fs');
-    const challenges = Challenge.parse(process.argv[1]);
+    const challenges = Challenge.fromHeaders(new Headers({ 'WWW-Authenticate': process.argv[1] }));
     const tempo = challenges.find(c => c.method === 'tempo');
     const privateKey = fs.readFileSync('./wallet-key.txt', 'utf8').trim();
-    Credential.create(tempo, { privateKey }).then(c => {
+    Credential.from(tempo, { privateKey }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH")
@@ -271,9 +271,9 @@ if [ "$HTTP_CODE" = "402" ]; then
   # Select the Stripe challenge and create credential using SPT
   CREDENTIAL=$(node -e "
     const { Challenge, Credential } = require('mppx');
-    const challenges = Challenge.parse(process.argv[1]);
+    const challenges = Challenge.fromHeaders(new Headers({ 'WWW-Authenticate': process.argv[1] }));
     const stripe = challenges.find(c => c.method === 'stripe');
-    Credential.create(stripe, { spt: process.argv[2] }).then(c => {
+    Credential.from(stripe, { spt: process.argv[2] }).then(c => {
       process.stdout.write(Credential.serialize(c));
     });
   " "$WWW_AUTH" "$SPT")
