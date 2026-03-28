@@ -1,0 +1,39 @@
+{
+  "name": "alchemy",
+  "version": "1.0.0",
+  "description": "Installable Alchemy developer platform skills for Codex.",
+  "author": {
+    "name": "Alchemy",
+    "url": "https://www.alchemy.com/"
+  },
+  "homepage": "https://www.alchemy.com/docs",
+  "repository": "https://github.com/alchemyplatform/skills",
+  "license": "MIT",
+  "keywords": [
+    "alchemy",
+    "blockchain",
+    "web3",
+    "rpc",
+    "agent-skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Alchemy",
+    "shortDescription": "Alchemy skills for blockchain app builders.",
+    "longDescription": "Bundles Alchemy's public skills for routing between API key and gateway auth, building with JSON-RPC and Data APIs, and integrating deeper Alchemy platform features.",
+    "developerName": "Alchemy",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://www.alchemy.com/",
+    "privacyPolicyURL": "https://legal.alchemy.com/",
+    "termsOfServiceURL": "https://legal.alchemy.com/#contract-sblyf8eub",
+    "defaultPrompt": [
+      "Build a crypto prices dashboard in React",
+      "Sign up and prepay for compute autonomously using x402",
+      "Build a Solana asset viewer using the DAS API"
+    ]
+  }
+}
