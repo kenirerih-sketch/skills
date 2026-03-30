@@ -1,0 +1,20 @@
+{
+  "name": "alchemy-skills",
+  "interface": {
+    "displayName": "Alchemy Skills"
+  },
+  "plugins": [
+    {
+      "name": "alchemy",
+      "source": {
+        "source": "local",
+        "path": "./plugins/alchemy"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
