@@ -19,7 +19,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Alchemy",
-    "shortDescription": "Alchemy skills for blockchain app builders.",
+    "shortDescription": "Tools for crypto app development, data, and infrastructure",
     "longDescription": "Bundles Alchemy's public skills for routing between API key and gateway auth, building with JSON-RPC and Data APIs, and integrating deeper Alchemy platform features.",
     "developerName": "Alchemy",
     "category": "Developer Tools",
@@ -34,6 +34,8 @@
       "Build a crypto prices dashboard in React",
       "Sign up and prepay for compute autonomously using x402",
       "Build a Solana asset viewer using the DAS API"
-    ]
+    ],
+    "composerIcon": "./assets/alchemy-plugin.png",
+    "logo": "./assets/alchemy-plugin.png"
   }
 }
