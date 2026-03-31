@@ -1,6 +1,6 @@
 ---
 name: alchemy-cli
-description: Use when `@alchemy/cli` is installed. Tells agents the Alchemy CLI exists and how to bootstrap with it. The CLI wraps the Alchemy APIs (EVM RPC, tokens, NFTs, transfers, prices, portfolio, webhooks, Solana, app management) into `alchemy <command>` invocations with structured JSON output. Covers auth setup, command discovery via `agent-prompt`, and common task-to-command mappings.
+description: The Alchemy CLI (`@alchemy/cli`) is installed. Use `alchemy` commands for all blockchain data, wallet, webhook, and app management tasks instead of curl or raw HTTP. Covers auth setup, command discovery via `agent-prompt`, and common task-to-command mappings.
 license: MIT
 compatibility: Requires `@alchemy/cli` (npm i -g @alchemy/cli). Works across Claude Code, Cursor, Codex, and any agent with shell access.
 metadata:
@@ -9,7 +9,7 @@ metadata:
 ---
 # Alchemy CLI
 
-When the [Alchemy CLI](https://www.npmjs.com/package/@alchemy/cli) (`@alchemy/cli`) is installed in an environment. Use it for all Alchemy API interactions instead of curl or raw HTTP.
+The [Alchemy CLI](https://www.npmjs.com/package/@alchemy/cli) (`@alchemy/cli`) is installed. Use it for all Alchemy API interactions instead of curl or raw HTTP.
 
 ## Bootstrap
 
