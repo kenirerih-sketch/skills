@@ -18,6 +18,13 @@ Traditional API key-based access to all Alchemy products: EVM JSON-RPC, Token AP
 - **Setup**: Create a free key at [dashboard.alchemy.com](https://dashboard.alchemy.com/)
 - **Entry point**: [`skills/alchemy-api/SKILL.md`](skills/alchemy-api/SKILL.md)
 
+### `skills/alchemy-cli`
+CLI-first skill for agents with [`@alchemy/cli`](https://www.npmjs.com/package/@alchemy/cli) installed. Maps the Alchemy API surfaces to `alchemy <command>` invocations with structured JSON output.
+
+- **Auth**: CLI manages auth internally (API key, access key, x402 wallet)
+- **Setup**: `npm i -g @alchemy/cli`
+- **Entry point**: [`skills/alchemy-cli/SKILL.md`](skills/alchemy-cli/SKILL.md)
+
 ### `skills/agentic-gateway`
 Lets agents easily access Alchemy's developer platform. Supports three access methods: API key, x402 protocol (USDC payments), or MPP protocol (Tempo/Stripe payments). Prompts the user to choose their preferred protocol.
 
@@ -30,6 +37,7 @@ Lets agents easily access Alchemy's developer platform. Supports three access me
 
 | Scenario | Skill |
 |---|---|
+| I have `@alchemy/cli` installed | `alchemy-cli` |
 | I want to use Alchemy in Codex but have not chosen an auth path yet | `alchemy-codex` |
 | I have an Alchemy API key | `alchemy-api` |
 | I'm building a traditional server or dApp | `alchemy-api` |
