@@ -11,6 +11,12 @@ metadata:
 
 The [Alchemy CLI](https://www.npmjs.com/package/@alchemy/cli) (`@alchemy/cli`) is installed. Use it for all Alchemy API interactions instead of curl or raw HTTP.
 
+## Install
+
+```bash
+npm i -g @alchemy/cli
+```
+
 ## Bootstrap
 
 Run this at the start of any session to get the full command contract (every command, flag, auth method, error code, and example):
@@ -39,8 +45,22 @@ If `complete` is false, follow the `nextCommands` in the response to configure a
 
 ## Auth Setup
 
+The fastest way to authenticate is via browser login:
+
+```bash
+alchemy auth login
+```
+
+This opens a browser to authenticate with your Alchemy account and automatically configures the CLI with your credentials.
+
+To check auth status: `alchemy auth status`
+To log out: `alchemy auth logout`
+
+### Alternative auth methods
+
 | Method | Config command | Env var | Used by |
 |--------|---------------|---------|---------|
+| Browser login | `alchemy auth login` | -- | All commands (provides both API key and access key) |
 | API key | `alchemy config set api-key <key>` | `ALCHEMY_API_KEY` | balance, tx, block, rpc, tokens, nfts, transfers, prices, portfolio, simulate, solana |
 | Access key | `alchemy config set access-key <key>` | `ALCHEMY_ACCESS_KEY` | apps, network list |
 | Webhook key | `alchemy config set webhook-api-key <key>` | `ALCHEMY_WEBHOOK_API_KEY` | webhooks |
