@@ -8,16 +8,24 @@ tags:
 related:
   - wallets-account-kit.md
   - operational-auth-and-keys.md
-updated: 2026-04-01
+updated: 2026-04-08
 ---
 # Wallet APIs
 
 ## Summary
-High-level wallet APIs enable programmatic wallet operations such as signing, transaction preparation, or account management. This guide stays minimal and focuses on integration awareness.
+High-level wallet APIs enable programmatic wallet operations such as signing, transaction preparation, account management, and EIP-7702 delegation/undelegation. This guide stays minimal and focuses on integration awareness.
 
 ## Primary Use Cases
 - Server-side transaction preparation.
 - Delegated signing or session-based flows.
+- EIP-7702 account delegation and undelegation.
+
+## EIP-7702 Undelegation
+Undelegation removes smart contract delegation from an EIP-7702 account by delegating to the zero address (`0x0000...0000`), restoring it to a plain EOA. Key details:
+- Gas is sponsored through a **BSO (Bundler Sponsorship) policy** — the account does not need native tokens.
+- Requires **enterprise plan** — sponsored undelegation is gated to enterprise customers.
+- Available via both the client SDK (`@alchemy/wallet-apis`) and REST API.
+- For advanced control, use `wallet_prepareCalls` + `wallet_sendPreparedCalls` to inspect and sign the authorization separately.
 
 ## Integration Notes
 - Prefer client-side signing for user security.
