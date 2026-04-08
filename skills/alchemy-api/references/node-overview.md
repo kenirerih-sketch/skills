@@ -4,7 +4,7 @@ name: node-apis
 description: Core JSON-RPC and WebSocket APIs for EVM chains via Alchemy node endpoints, plus Debug/Trace and utility methods. Use when building EVM integrations that need standard RPC calls, real-time subscriptions, enhanced Alchemy methods, or execution-level tracing.
 tags: []
 related: []
-updated: 2026-02-14
+updated: 2026-04-08
 metadata:
   author: alchemyplatform
   version: "1.0"
@@ -21,6 +21,9 @@ Core JSON-RPC and WebSocket APIs for EVM chains via Alchemy node endpoints, plus
 4. [node-utility-api.md](node-utility-api.md) - Convenience endpoints like bulk transaction receipts.
 5. [node-debug-api.md](node-debug-api.md) - Debug tracing for transaction simulation and execution insight.
 6. [node-trace-api.md](node-trace-api.md) - Trace-level details for internal calls and state diffs.
+
+## Recently Added Chains
+- **Injective** — Cosmos SDK-based L1 with full EVM compatibility. Supports standard `eth_*` JSON-RPC methods. Use endpoint pattern `injective-mainnet`. See [Injective API Overview](https://www.alchemy.com/docs/chains/injective/injective-api-overview).
 
 ## How to Use This Skill
 - Start with `node-json-rpc.md` for base connectivity and request patterns.

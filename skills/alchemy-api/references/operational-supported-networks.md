@@ -9,7 +9,7 @@ tags:
 related:
   - node-json-rpc.md
   - solana-rpc.md
-updated: 2026-04-01
+updated: 2026-04-08
 ---
 # Supported Networks
 
@@ -162,6 +162,7 @@ hyperliquid-mainnet
 hyperliquid-testnet
 ink-mainnet
 ink-sepolia
+injective-mainnet
 lens-mainnet
 lens-sepolia
 linea-mainnet
