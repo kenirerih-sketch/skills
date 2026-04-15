@@ -1,6 +1,6 @@
 ---
 name: alchemy-api
-description: Integrates Alchemy blockchain APIs using an API key. Requires $ALCHEMY_API_KEY to be set; if unavailable, use the agentic-gateway skill instead. Use when user asks about EVM JSON-RPC calls, token balances, NFT ownership or metadata, transfer history, token prices, portfolio data, transaction simulation, webhooks, Solana RPC, or any Alchemy product integration. Covers base URLs, authentication, endpoint selection, pagination, and common patterns.
+description: Integrates Alchemy blockchain APIs using an API key. Requires $ALCHEMY_API_KEY to be set; if unavailable, use the agentic-gateway skill instead. Use when user asks about EVM JSON-RPC calls, token balances, NFT ownership or metadata, transfer history, token prices, portfolio data, transaction simulation, webhooks, Solana RPC, Sui gRPC, or any Alchemy product integration. Covers base URLs, authentication, endpoint selection, pagination, and common patterns.
 license: MIT
 compatibility: Requires network access and $ALCHEMY_API_KEY environment variable. Works across Claude.ai, Claude Code, and API.
 metadata:
@@ -67,6 +67,7 @@ Developers can always create a free API key at https://dashboard.alchemy.com/.
 | BNB RPC (WSS) | `wss://bnb-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY` | API key in URL | Subscriptions and realtime. |
 | Solana RPC (HTTPS) | `https://solana-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY` | API key in URL | Solana JSON-RPC. |
 | Solana Yellowstone gRPC | `https://solana-mainnet.g.alchemy.com` | `X-Token: $ALCHEMY_API_KEY` | gRPC streaming (Yellowstone). |
+| Sui gRPC | `sui-mainnet.g.alchemy.com:443` | `Authorization: Bearer $ALCHEMY_API_KEY` | Sui gRPC API (objects, txs, balances, streaming). |
 | NFT API | `https://<network>.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY` | API key in URL | NFT ownership and metadata. |
 | Prices API | `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY` | API key in URL | Prices by symbol or address. |
 | Portfolio API | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY` | API key in URL | Multi-chain wallet views. |
@@ -88,6 +89,9 @@ Developers can always create a free API key at https://dashboard.alchemy.com/.
 | Simulate tx | `alchemy_simulateAssetChanges` | `references/data-simulation-api.md` |
 | Create webhook | `POST /create-webhook` | `references/webhooks-details.md` |
 | Solana NFT data | `getAssetsByOwner` (DAS) | `references/solana-das-api.md` |
+| Sui objects/txs | `GetObject`, `GetTransaction` (gRPC) | `references/sui-grpc-objects-and-ledger.md` |
+| Sui balances | `GetBalance`, `ListBalances` (gRPC) | `references/sui-grpc-state-and-balances.md` |
+| Sui checkpoints stream | `SubscribeCheckpoints` (gRPC) | `references/sui-grpc-subscriptions.md` |
 
 ## One-File Quickstart (Copy/Paste)
 
@@ -179,13 +183,14 @@ export function verify(rawBody: string, signature: string, secret: string) {
 
 ## Skill Map
 
-For the complete index of all 82+ reference files organized by product area (Node, Data, Webhooks, Solana, Wallets, Rollups, Recipes, Operational, Ecosystem), see `references/skill-map.md`.
+For the complete index of all 90+ reference files organized by product area (Node, Data, Webhooks, Solana, Sui gRPC, Wallets, Rollups, Recipes, Operational, Ecosystem), see `references/skill-map.md`.
 
 Quick category overview:
 - **Node**: JSON-RPC, WebSocket, Debug, Trace, Enhanced APIs, Utility
 - **Data**: NFT, Portfolio, Prices, Simulation, Token, Transfers
 - **Webhooks**: Address Activity, Custom (GraphQL), NFT Activity, Payloads, Signatures
 - **Solana**: JSON-RPC, DAS, Yellowstone gRPC (streaming), Wallets
+- **Sui gRPC**: Objects, Transactions, Balances, Move Packages, Name Service, Subscriptions, Signature Verification
 - **Wallets**: Account Kit, Bundler, Gas Manager, Smart Wallets
 - **Rollups**: L2/L3 deployment overview
 - **Recipes**: 10 end-to-end integration workflows
