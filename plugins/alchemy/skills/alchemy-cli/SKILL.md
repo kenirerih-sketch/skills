@@ -57,13 +57,18 @@ alchemy --json --no-interactive agent-prompt
 
 ## Preflight
 
-Before the first command, check auth readiness:
+Before the first command, run **both** of these checks:
 
 ```bash
 alchemy --json --no-interactive setup status
+alchemy --json --no-interactive gas
 ```
 
-If `complete` is false, follow the `nextCommands` in the response to configure auth.
+`setup status` returns `{"complete": true, "satisfiedBy": "<source>"}` if any auth is configured. **Do not rely on `complete: true` alone** — there is a known false positive where `setup status` reports `complete: true` with `satisfiedBy: "auth_token"`, but RPC commands still fail with `AUTH_REQUIRED` because no API key has been derived from the auth token.
+
+`gas` is a lightweight RPC smoke test that catches this. If it returns `{"gasPrice": "0x...", ...}`, RPC is wired up correctly. If it returns `{"error": {"code": "AUTH_REQUIRED", ...}}`, run `alchemy auth login` (which fetches and saves the API key) or `alchemy config set api-key <key>`, then re-run `gas` to confirm.
+
+If `setup status` reports `complete: false`, follow the `nextCommands` in the response first, then run `gas` to verify.
 
 ## Auth setup
 
@@ -148,10 +153,14 @@ Get API/access keys at [dashboard.alchemy.com](https://dashboard.alchemy.com/).
 | Task | Command |
 |------|---------|
 | List apps | `alchemy apps list` |
+| Get app details | `alchemy apps get <id>` |
 | Create app | `alchemy apps create --name "My App" --networks eth-mainnet` |
-| Update app | `alchemy apps update <id> --name "New Name"` |
+| Update app metadata | `alchemy apps update <id> --name "New Name"` |
+| Update app network allowlist | `alchemy apps networks <id> --networks eth-mainnet,base-mainnet` |
 | Delete app | `alchemy apps delete <id>` |
-| List networks | `alchemy network list` |
+| List networks configured for an app | `alchemy apps configured-networks [--app-id <id>]` |
+| List Admin API chain identifiers (for `apps create`/`update`) | `alchemy apps chains` |
+| List all RPC network slugs (for `--network`) | `alchemy network list` |
 
 ### CLI admin
 
