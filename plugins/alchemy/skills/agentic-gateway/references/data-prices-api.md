@@ -214,6 +214,22 @@ curl -s -X POST "https://x402.alchemy.com/prices/v1/tokens/historical" \
 - Historical data returns single price points per interval, not OHLCV candles.
 - Symbol-based endpoints are network-agnostic. Address-based endpoints require specifying the network.
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy prices symbol ETH,USDC --json --no-interactive
+  alchemy prices address --addresses '[{"network":"eth-mainnet","address":"0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"}]' --json --no-interactive
+  alchemy prices historical --body '{"symbol":"ETH","startTime":"2025-01-01T00:00:00Z","endTime":"2025-01-07T00:00:00Z","interval":"1h"}' --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getTokenPricesBySymbol`, `getTokenPricesByAddress`, `getHistoricalTokenPrices` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/...` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Prices API Quickstart](https://www.alchemy.com/docs/reference/prices-api-quickstart)
 - [Token Prices by Symbol](https://www.alchemy.com/docs/data/prices-api/prices-api-endpoints/prices-api-endpoints/get-token-prices-by-symbol)

@@ -182,6 +182,23 @@ The result is a string representing the allowance in the token's smallest unit. 
 - `getTokenBalances` may return zero balances for tokens the address has interacted with historically. Filter for non-zero if needed.
 - Use `contractAddresses` array in `tokenSpec` to query specific tokens instead of scanning all ERC-20s.
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy tokens balances 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy tokens balances 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --metadata --json --no-interactive
+  alchemy tokens metadata 0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48 --json --no-interactive
+  alchemy tokens allowance --owner 0xd8dA... --spender 0xdef1... --contract 0xA0b8... --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getTokenBalances`, `getTokenMetadata`, `getTokenAllowance` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Token API Quickstart](https://www.alchemy.com/docs/reference/token-api-quickstart)
 - [alchemy_getTokenBalances](https://www.alchemy.com/docs/data/token-api/token-api-endpoints/alchemy-get-token-balances)

@@ -4,7 +4,7 @@ name: node-apis
 description: Core JSON-RPC and WebSocket APIs for EVM chains via Alchemy node endpoints, plus Debug/Trace and utility methods. Use when building EVM integrations that need standard RPC calls, real-time subscriptions, enhanced Alchemy methods, or execution-level tracing.
 tags: []
 related: []
-updated: 2026-02-14
+updated: 2026-04-08
 metadata:
   author: alchemyplatform
   version: "1.0"
@@ -22,20 +22,38 @@ Core JSON-RPC and WebSocket APIs for EVM chains via Alchemy node endpoints, plus
 5. [node-debug-api.md](node-debug-api.md) - Debug tracing for transaction simulation and execution insight.
 6. [node-trace-api.md](node-trace-api.md) - Trace-level details for internal calls and state diffs.
 
+## Recently Added Chains
+- **Injective** — Cosmos SDK-based L1 with full EVM compatibility. Supports standard `eth_*` JSON-RPC methods. Use endpoint pattern `injective-mainnet`. See [Injective API Overview](https://www.alchemy.com/docs/chains/injective/injective-api-overview).
+
 ## How to Use This Skill
 - Start with `node-json-rpc.md` for base connectivity and request patterns.
 - Use `node-enhanced-apis.md` for wallet/asset analytics on EVM without scanning logs.
 - Use Debug/Trace when you need internal call trees or detailed execution flow.
 
-## Agentic Gateway
-Node JSON-RPC and enhanced APIs are also available via the Agentic Gateway (`https://x402.alchemy.com/{chainNetwork}/v2`) without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+## Other ways to access this API
+
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy balance 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy tx 0x3847245c01829b...
+  alchemy block latest
+  alchemy rpc eth_blockNumber
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `ethBlockNumber`, `ethGetBalance`, `ethGetTransactionByHash`, `ethGetBlockByNumber`, `ethGasPrice`, `ethGetLogs` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/v2` (x402) or `https://mpp.alchemy.com/{chainNetwork}/v2` (MPP).
 
 ## Cross-References
 - `data-apis` skill for higher-level asset analytics.
 - `webhooks` skill for event-driven flows.
 - `operational` skill for auth, limits, and reliability.
-- `agentic-gateway` skill for easy agent access to Alchemy's developer platform.
+- `alchemy-cli` skill for live agent work via the local CLI (preferred local fallback).
+- `alchemy-mcp` skill for live agent work via the hosted MCP server (when CLI is not installed).
+- `agentic-gateway` skill for app code without an API key (x402 or MPP).
 
 ## Official Docs
 - [Chain APIs Overview](https://www.alchemy.com/docs/reference/chain-apis-overview)

@@ -126,6 +126,21 @@ curl -s -X POST https://x402.alchemy.com/eth-mainnet/v2 \
 - Use narrow block ranges for polling patterns to reduce compute unit usage.
 - The `internal` category tracks internal EVM calls and is only available on Ethereum Mainnet and Polygon Mainnet.
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy transfers 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --category erc20,external --json --no-interactive
+  alchemy transfers 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --category erc20,erc721,erc1155,external,internal --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then:
+  `getAssetTransfers` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Transfers API Quickstart](https://www.alchemy.com/docs/reference/transfers-api-quickstart)
 - [alchemy_getAssetTransfers](https://www.alchemy.com/docs/reference/alchemy-getassettransfers)

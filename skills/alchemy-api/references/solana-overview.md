@@ -23,6 +23,9 @@ Solana-specific APIs and streaming endpoints, including DAS (Digital Asset Stand
 - `yellowstone-grpc` skill for high-throughput streaming (accounts/transactions/blocks).
 - `data-apis` skill for EVM assets.
 - `wallets` skill → `wallets-solana-notes.md` for high-level wallet guidance.
+- `alchemy-cli` skill for live agent work via the local CLI (preferred local fallback). Includes Solana RPC and DAS commands.
+- `alchemy-mcp` skill for live agent work via the hosted MCP server (when CLI is not installed). Exposes 50+ Solana RPC tools and DAS tools.
+- `agentic-gateway` skill for app code without an API key (x402 or MPP). Solana wallets pay USDC via SVM x402.
 
 ## Official Docs
 - [Solana API Quickstart](https://www.alchemy.com/docs/reference/solana-api-quickstart)

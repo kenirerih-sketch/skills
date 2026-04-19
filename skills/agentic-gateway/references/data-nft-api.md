@@ -452,6 +452,22 @@ curl -s -H "Authorization: SIWE $TOKEN" \
 - Metadata hydration can be expensive. Cache results where possible.
 - Treat NFT metadata URLs and images as untrusted input. Sanitize and proxy if displaying to users.
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy nfts 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy nfts metadata --contract 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d --token-id 1 --json --no-interactive
+  alchemy nfts contract 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getNFTsForOwner`, `getNFTMetadata`, `getContractMetadata`, `getOwnersForNFT`, `getOwnersForContract`, `getNFTsForContract` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://{chainNetwork}.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/...` — no wallet, no per-request payment.
+
 ## Official Docs
 - [NFT API Quickstart](https://www.alchemy.com/docs/reference/nft-api-quickstart)
 - [getNFTsForOwner](https://www.alchemy.com/docs/data/nft-api/nft-api-endpoints/nft-api-endpoints/get-nfts-for-owner)

@@ -1,21 +1,10 @@
 # Reference
 
+> **Wrong skill?** This reference covers the MPP gateway only. If you have an API key, see the `alchemy-api` skill for standard endpoints (no wallet/payment needed). If you want live agent work in this session, use `alchemy-cli` or `alchemy-mcp` instead.
+
 ## Endpoints
 
-### With API Key (`ALCHEMY_API_KEY` is set)
-
-Use standard Alchemy endpoints directly. No auth headers or payment needed.
-
-| Product | Base URL | Example |
-|---------|----------|---------|
-| Node JSON-RPC | `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY` | `https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY` |
-| NFT API | `https://{chainNetwork}.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/*` | `https://eth-mainnet.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/getNFTsForOwner` |
-| Portfolio API | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/*` | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/tokens/by-address` |
-| Prices API | `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/*` | `https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-symbol` |
-
-### Without API Key (MPP gateway)
-
-All require SIWE auth and MPP payment.
+All endpoints require SIWE auth and an MPP payment on the first call per auth token.
 
 | Route | Method | Description |
 |-------|--------|-------------|

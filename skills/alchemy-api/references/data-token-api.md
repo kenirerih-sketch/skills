@@ -182,10 +182,22 @@ The result is a string representing the allowance in the token's smallest unit. 
 - `getTokenBalances` may return zero balances for tokens the address has interacted with historically. Filter for non-zero if needed.
 - Use `contractAddresses` array in `tokenSpec` to query specific tokens instead of scanning all ERC-20s.
 
-## Agentic Gateway
+## Other ways to access this API
 
-This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy tokens balances 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy tokens balances 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --metadata
+  alchemy tokens metadata 0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+  alchemy tokens allowance --owner 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --spender 0xdef1c0ded9bec7f1a1670819833240f027b25eff --contract 0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getTokenBalances`, `getTokenMetadata`, `getTokenAllowance` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/v2` (x402) or `https://mpp.alchemy.com/{chainNetwork}/v2` (MPP).
 
 ## Official Docs
 - [Token API Quickstart](https://www.alchemy.com/docs/reference/token-api-quickstart)

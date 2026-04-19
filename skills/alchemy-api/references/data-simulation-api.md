@@ -302,10 +302,20 @@ Returns an array of results, one per transaction. Each result has `calls` and `l
 - Simulation is more compute-intensive than standard reads. Cache results where possible.
 - Reverted simulations return an `error` object with the revert reason.
 
-## Agentic Gateway
+## Other ways to access this API
 
-This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy simulate asset-changes --tx '{"from":"0xd8dA...","to":"0xA0b8...","data":"0xa9059cbb..."}' --json --no-interactive
+  alchemy simulate execution --tx '{"from":"0xd8dA...","to":"0xA0b8...","data":"0xa9059cbb..."}'
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `simulateAssetChanges`, `simulateExecution`, `simulateAssetChangesBundle`, `simulateExecutionBundle` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/v2` (x402) or `https://mpp.alchemy.com/{chainNetwork}/v2` (MPP).
 
 ## Official Docs
 - [Simulation API Overview](https://www.alchemy.com/docs/data/simulation-api)

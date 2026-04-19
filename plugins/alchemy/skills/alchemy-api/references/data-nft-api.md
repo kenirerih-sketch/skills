@@ -449,10 +449,21 @@ curl -s "https://eth-mainnet.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/getNFTsForCon
 - Metadata hydration can be expensive. Cache results where possible.
 - Treat NFT metadata URLs and images as untrusted input. Sanitize and proxy if displaying to users.
 
-## Agentic Gateway
+## Other ways to access this API
 
-This API is also available via `https://x402.alchemy.com/{chainNetwork}/nft/v3/...` without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy nfts 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy nfts metadata --contract 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d --token-id 1
+  alchemy nfts contract 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getNFTsForOwner`, `getNFTMetadata`, `getContractMetadata`, `getOwnersForNFT`, `getOwnersForContract`, `getNFTsForContract` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/nft/v3/...` (x402) or `https://mpp.alchemy.com/{chainNetwork}/nft/v3/...` (MPP).
 
 ## Official Docs
 - [NFT API Quickstart](https://www.alchemy.com/docs/reference/nft-api-quickstart)

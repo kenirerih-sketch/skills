@@ -1,50 +1,19 @@
-# Curl Workflow
+# Curl Workflow (x402)
 
-A lightweight way to call Alchemy endpoints using curl.
+Lightweight curl pattern for prototyping x402 gateway calls before you wire up `@x402/fetch` or `@x402/axios` in app code.
 
-## If `ALCHEMY_API_KEY` Is Set
-
-No wallet or auth token needed. Just use the API key in the URL:
-
-```bash
-# Node JSON-RPC
-curl -s -X POST "https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"id":1,"jsonrpc":"2.0","method":"eth_blockNumber"}'
-
-# NFT API
-curl -s -G "https://eth-mainnet.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/getNFTsForOwner" \
-  --data-urlencode "owner=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" \
-  --data-urlencode "withMetadata=true" \
-  --data-urlencode "pageSize=10"
-
-# Prices API
-curl -s -G "https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-symbol" \
-  --data-urlencode "symbols=ETH"
-
-# Portfolio API
-curl -s -X POST "https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/assets/tokens/by-address" \
-  -H "Content-Type: application/json" \
-  -d '{"addresses":["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"],"withMetadata":true}'
-```
-
-Skip all steps below — no wallet, auth token, or payment handling needed.
-
----
-
-## If `ALCHEMY_API_KEY` Is NOT Set (x402 Flow)
+> **Wrong skill?** If the user has an API key and wants a normal app integration, redirect to `alchemy-api`. If the user wants live agent work in this session (one-off queries from the terminal), redirect to `alchemy-cli` (preferred) or `alchemy-mcp` — those are simpler and don't require wallet/payment setup.
 
 Use the `@alchemy/x402` CLI with wallet-based authentication and x402 USDC payments.
 
 > **Auth vs chain:** Your wallet type determines the auth scheme (`SIWE` for EVM wallets, `SIWS` for Solana wallets) and payment commands. The chain URL in each curl request is independent — use whichever chain you want to query.
 
-### When to Use
+### When to use
 
-- Answering quick blockchain questions (latest block, ETH balance, token balance, NFT ownership, token prices, portfolio data)
-- Making a few API calls from the command line or a bash script
-- No existing npm project and you don't want to set one up
+- Prototyping the x402 flow before writing it into app code
+- Smoke-testing the gateway from a bash script in your application repo
 
-For SDK-based workflows with automatic payment handling, see [making-requests](making-requests.md) instead.
+For SDK-based workflows with automatic payment handling (the recommended app-code path), see [making-requests](making-requests.md) instead.
 
 ### Step 0: Ensure Wallet Exists
 

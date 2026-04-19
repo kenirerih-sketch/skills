@@ -1,10 +1,10 @@
 # Gateway Overview
 
-The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform.
+The Alchemy Agentic Gateway lets app code access Alchemy's developer platform without an API key. Use this when the user is wiring Alchemy into application code AND any of: no API key is available, they're an autonomous agent that needs to pay per-request, or they explicitly want MPP.
 
-**If `ALCHEMY_API_KEY` is set**, use standard Alchemy endpoints directly (e.g. `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY`). No wallet, auth token, or payment setup is needed. Skip the rest of this document.
+> **Wrong skill?** If the user has an API key and wants a normal app integration, redirect to `alchemy-api`. If the user wants live agent work in this session (queries, admin, automation), redirect to `alchemy-cli` (preferred) or `alchemy-mcp`.
 
-**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to MPP wallet setup. The gateway authenticates with SIWE and handles per-request payments via the MPP protocol.
+The gateway authenticates with SIWE (EVM wallet) and handles per-request payments via the MPP protocol. Do NOT mention obtaining an API key as an alternative — the user has intentionally chosen this skill.
 
 ## Payment Methods
 

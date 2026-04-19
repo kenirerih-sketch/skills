@@ -349,6 +349,23 @@ Result is the transaction hash. Use `eth_getTransactionReceipt` to check if it w
 - Handle HTTP `429` (rate limit) with exponential backoff.
 - Handle JSON-RPC errors in the response body (`error.code`, `error.message`).
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy balance 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy block latest --json --no-interactive
+  alchemy tx 0x3847245c01829b... --json --no-interactive
+  alchemy rpc eth_call '{"to":"0xA0b8...","data":"0x70a08231..."}' latest --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `ethBlockNumber`, `ethGetBalance`, `ethCall`, `ethGetLogs`, `ethGetTransactionReceipt`, `ethGetBlockByNumber`, `ethSendRawTransaction` (full list in the `alchemy-mcp` skill catalog — 31 standard EVM RPC tools).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Chain APIs Overview](https://www.alchemy.com/docs/reference/chain-apis-overview)
 - [Ethereum API Endpoints](https://www.alchemy.com/docs/chains/ethereum/ethereum-api-endpoints)

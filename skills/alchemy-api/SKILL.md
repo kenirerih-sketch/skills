@@ -1,60 +1,62 @@
 ---
 name: alchemy-api
-description: Integrates Alchemy blockchain APIs using an API key. Requires $ALCHEMY_API_KEY to be set; if unavailable, use the agentic-gateway skill instead. Use when user asks about EVM JSON-RPC calls, token balances, NFT ownership or metadata, transfer history, token prices, portfolio data, transaction simulation, webhooks, Solana RPC, Sui gRPC, or any Alchemy product integration. Covers base URLs, authentication, endpoint selection, pagination, and common patterns.
+description: Wire Alchemy into application code (server, backend, dApp, script) using a standard API key. Preferred app-integration path for normal server/backend usage. Covers EVM JSON-RPC, Token API, NFT API, Transfers API, Prices API, Portfolio API, Simulation, Webhooks, Solana RPC, Solana DAS, Solana Yellowstone gRPC, Sui gRPC, Wallets/Account Kit, and operational topics. Requires `$ALCHEMY_API_KEY`. For live agent work in this session (querying, admin, local automation), use `alchemy-cli` (preferred) or `alchemy-mcp` instead. For app code without an API key (autonomous agent paying per-request, or explicit x402/MPP), use `agentic-gateway` instead.
 license: MIT
-compatibility: Requires network access and $ALCHEMY_API_KEY environment variable. Works across Claude.ai, Claude Code, and API.
+compatibility: Requires network access and `$ALCHEMY_API_KEY` environment variable. Works across Claude.ai, Claude Code, Cursor, Codex, and API.
 metadata:
   author: alchemyplatform
-  version: "1.0"
+  version: "2.0"
 ---
-# AI + Alchemy API Integration Guide
+# Alchemy API (with API Key)
 
-## Mandatory Routing Gate (Hard Requirement)
+Reference and integration guide for wiring Alchemy APIs into application code using a standard API key. This file alone is enough to ship a basic integration; the `references/` directory contains deeper coverage of every product surface.
 
-Before the first network call or implementation step, you MUST ask the user the following question and wait for an explicit answer:
+## When to use this skill
 
-> Do you want to use an existing Alchemy API key, or should I use the agentic gateway flow instead?
+Use `alchemy-api` when **all** of the following are true:
 
-If the user chooses the API key path, continue with this skill.
-If the user chooses the agentic gateway path, switch to the `agentic-gateway` skill immediately and follow its existing wallet flow.
-If the user chooses the API key path but `ALCHEMY_API_KEY` is unset or empty, tell them they can create a free API key at https://dashboard.alchemy.com/ or switch to the `agentic-gateway` skill.
+- The user is wiring Alchemy into **application code** (server, backend, dApp, worker, script) that runs **outside** the current agent session
+- They have, or are willing to create, an Alchemy API key (free at [dashboard.alchemy.com](https://dashboard.alchemy.com/))
 
-You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unless the user explicitly asks for that endpoint.
-Execute no network calls before this gate is evaluated.
+This is the **preferred app-integration path** for normal server/backend usage.
 
-**Escape hatch:** Only re-evaluate the routing gate if the user explicitly requests to switch to the `alchemy-api` skill with an API key. A key appearing in the environment or conversation does not automatically trigger a switch — the user must ask for it.
+## When to use a different skill
 
-**Duplicate resolution:** If this skill is installed both locally and globally, the local copy overrides the global copy. Do not mix behavior from different copies.
+| Situation | Use this skill instead |
+| --- | --- |
+| Live agent work in this session (queries, admin, on-machine automation) and `@alchemy/cli` is installed locally — or both CLI and MCP are available | `alchemy-cli` |
+| Live agent work in this session and only MCP is wired into the client (no CLI) | `alchemy-mcp` |
+| Live agent work and neither is available | install `alchemy-cli` and use `alchemy-cli` |
+| Application code without an API key — autonomous agent paying per-request, or user explicitly wants x402/MPP | `agentic-gateway` |
 
-## Required Preflight Check
+Do **not** use this skill to run ad-hoc live queries from inside the agent session — that's the `alchemy-cli` / `alchemy-mcp` path. This skill is for code that ships.
 
-Before the first network call, internally evaluate:
-1. Has the user explicitly chosen API key or agentic gateway?
-2. If the user chose API key, is `ALCHEMY_API_KEY` present and non-empty?
-3. If the user chose agentic gateway, switch to the `agentic-gateway` skill immediately. Demo and public endpoints are disallowed.
-4. If the user chose API key but no key is available, do not proceed with API-key URLs until the user provides a key or switches to the gateway flow.
+## Mandatory preflight gate
 
-Do not output this internal checklist to the user.
+Before writing application code or making any network call:
+
+1. Confirm the user is building **application code** (not asking the agent to run a live query). If the user is asking for live work, redirect to `alchemy-cli` (preferred) or `alchemy-mcp`.
+2. Check `$ALCHEMY_API_KEY` is set (e.g. `echo $ALCHEMY_API_KEY`).
+3. If `$ALCHEMY_API_KEY` is unset or empty:
+   - Tell the user they can create a free API key at [https://dashboard.alchemy.com/](https://dashboard.alchemy.com/), **or**
+   - Switch to the `agentic-gateway` skill (x402/MPP gateway, wallet-based auth, no API key needed).
+
+You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unless the user explicitly asks for that endpoint. No public RPC endpoints (publicnode, llamarpc, cloudflare-eth, etc.) as a fallback.
 
 ## Summary
+
 A self-contained guide for AI agents integrating Alchemy APIs using an API key. This file alone should be enough to ship a basic integration. Use the reference files for depth, edge cases, and advanced workflows.
 
-Developers can always create a free API key at https://dashboard.alchemy.com/.
+Developers can always create a free API key at [https://dashboard.alchemy.com/](https://dashboard.alchemy.com/).
 
-## Before Making Any Request
+## Do this first
 
-1. Ask the user whether they want to use an existing Alchemy API key or the agentic gateway flow.
-2. If they choose the API key path, check if `$ALCHEMY_API_KEY` is set (e.g., `echo $ALCHEMY_API_KEY`).
-3. If they choose the API key path and no key is set, tell them they can create a free key at https://dashboard.alchemy.com/ or switch to the `agentic-gateway` skill.
-4. If they choose the agentic gateway flow, switch to the `agentic-gateway` skill and let it handle the existing wallet vs new wallet prompt.
-5. If they choose the API key path and the key is set, use the Base URLs + Auth table below.
+1. Confirm app-integration scope (see [Mandatory preflight gate](#mandatory-preflight-gate)).
+2. Choose the right product using the [Endpoint selector](#endpoint-selector-top-tasks) below.
+3. Use the [Base URLs + auth](#base-urls--auth-cheat-sheet) table for the correct endpoint and headers.
+4. Copy a [Quickstart example](#one-file-quickstart-copypaste) and test against a testnet first.
 
-## Do This First
-1. Choose the right product using the Endpoint Selector below.
-2. Use the Base URLs + Auth table for the correct endpoint and headers.
-3. Copy a Quickstart example and test against a testnet first.
-
-## Base URLs + Auth (Cheat Sheet)
+## Base URLs + auth (cheat sheet)
 | Product | Base URL | Auth | Notes |
 | --- | --- | --- | --- |
 | Ethereum RPC (HTTPS) | `https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY` | API key in URL | Standard EVM reads and writes. |
@@ -73,8 +75,8 @@ Developers can always create a free API key at https://dashboard.alchemy.com/.
 | Portfolio API | `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY` | API key in URL | Multi-chain wallet views. |
 | Notify API | `https://dashboard.alchemy.com/api` | `X-Alchemy-Token: <ALCHEMY_NOTIFY_AUTH_TOKEN>` | Generate token in dashboard. |
 
-## Endpoint Selector (Top Tasks)
-| You need | Use this | Skill / File |
+## Endpoint selector (top tasks)
+| You need | Use this | Skill / file |
 | --- | --- | --- |
 | EVM read/write | JSON-RPC `eth_*` | `references/node-json-rpc.md` |
 | Realtime events | `eth_subscribe` | `references/node-websocket-subscriptions.md` |
@@ -93,49 +95,49 @@ Developers can always create a free API key at https://dashboard.alchemy.com/.
 | Sui balances | `GetBalance`, `ListBalances` (gRPC) | `references/sui-grpc-state-and-balances.md` |
 | Sui checkpoints stream | `SubscribeCheckpoints` (gRPC) | `references/sui-grpc-subscriptions.md` |
 
-## One-File Quickstart (Copy/Paste)
+## One-file quickstart (copy/paste)
 
-> **No API key?** Use the `agentic-gateway` skill instead. Replace API-key URLs with `https://x402.alchemy.com/rpc/eth-mainnet` and add `Authorization: SIWE <token>`. See the `agentic-gateway` skill for setup.
+> **No API key?** Use the `agentic-gateway` skill instead. Replace API-key URLs with `https://x402.alchemy.com/eth-mainnet/v2` and add `Authorization: SIWE <token>` (or `SIWS <token>` for a Solana wallet). See the `agentic-gateway` skill for setup.
 
-### EVM JSON-RPC (Read)
+### EVM JSON-RPC (read)
 ```bash
 curl -s https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}'
 ```
 
-### Token Balances
+### Token balances
 ```bash
 curl -s https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"alchemy_getTokenBalances","params":["0x00000000219ab540356cbb839cbe05303d7705fa"]}'
 ```
 
-### Transfer History
+### Transfer history
 ```bash
 curl -s https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"alchemy_getAssetTransfers","params":[{"fromBlock":"0x0","toBlock":"latest","toAddress":"0x00000000219ab540356cbb839cbe05303d7705fa","category":["erc20"],"withMetadata":true,"maxCount":"0x3e8"}]}'
 ```
 
-### NFT Ownership
+### NFT ownership
 ```bash
 curl -s "https://eth-mainnet.g.alchemy.com/nft/v3/$ALCHEMY_API_KEY/getNFTsForOwner?owner=0x00000000219ab540356cbb839cbe05303d7705fa"
 ```
 
-### Prices (Spot)
+### Prices (spot)
 ```bash
 curl -s "https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/by-symbol?symbols=ETH&symbols=USDC"
 ```
 
-### Prices (Historical)
+### Prices (historical)
 ```bash
 curl -s -X POST "https://api.g.alchemy.com/prices/v1/$ALCHEMY_API_KEY/tokens/historical" \
   -H "Content-Type: application/json" \
   -d '{"symbol":"ETH","startTime":"2024-01-01T00:00:00Z","endTime":"2024-01-02T00:00:00Z"}'
 ```
 
-### Create Notify Webhook
+### Create Notify webhook
 ```bash
 curl -s -X POST "https://dashboard.alchemy.com/api/create-webhook" \
   -H "Content-Type: application/json" \
@@ -143,7 +145,7 @@ curl -s -X POST "https://dashboard.alchemy.com/api/create-webhook" \
   -d '{"network":"ETH_MAINNET","webhook_type":"ADDRESS_ACTIVITY","webhook_url":"https://example.com/webhook","addresses":["0x00000000219ab540356cbb839cbe05303d7705fa"]}'
 ```
 
-### Verify Webhook Signature (Node)
+### Verify webhook signature (Node)
 ```ts
 import crypto from "crypto";
 
@@ -153,11 +155,11 @@ export function verify(rawBody: string, signature: string, secret: string) {
 }
 ```
 
-## Network Naming Rules
+## Network naming rules
 - Data APIs and JSON-RPC use lowercase network enums like `eth-mainnet`.
 - Notify API uses uppercase enums like `ETH_MAINNET`.
 
-## Pagination + Limits (Cheat Sheet)
+## Pagination + limits (cheat sheet)
 | Endpoint | Limit | Notes |
 | --- | --- | --- |
 | `alchemy_getTokenBalances` | `maxCount` <= 100 | Use `pageKey` for pagination. |
@@ -167,7 +169,7 @@ export function verify(rawBody: string, signature: string, secret: string) {
 | Prices by address | 25 addresses, 3 networks | POST body `addresses[]`. |
 | Transactions history (beta) | 1 address/network pair, 2 networks | ETH and BASE mainnets only. |
 
-## Common Token Addresses
+## Common token addresses
 | Token | Chain | Address |
 | --- | --- | --- |
 | ETH | ethereum | `0x0000000000000000000000000000000000000000` |
@@ -175,13 +177,13 @@ export function verify(rawBody: string, signature: string, secret: string) {
 | USDC | ethereum | `0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eB48` |
 | USDC | base | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 
-## Failure Modes + Retries
+## Failure modes + retries
 - HTTP `429` means rate limit. Use exponential backoff with jitter.
 - JSON-RPC errors come in `error` fields even with HTTP 200.
 - Use `pageKey` to resume pagination after failures.
 - De-dupe websocket events on reconnect.
 
-## Skill Map
+## Skill map
 
 For the complete index of all 90+ reference files organized by product area (Node, Data, Webhooks, Solana, Sui gRPC, Wallets, Rollups, Recipes, Operational, Ecosystem), see `references/skill-map.md`.
 
@@ -197,6 +199,14 @@ Quick category overview:
 - **Operational**: Auth, Rate Limits, Monitoring, Best Practices
 - **Ecosystem**: viem, ethers, wagmi, Hardhat, Foundry, Anchor, and more
 
+## Handing off to other skills
+
+| The user wants to... | Hand off to |
+| --- | --- |
+| Run a one-off live query, admin command, or on-machine automation in this session (CLI installed) | `alchemy-cli` |
+| Run a one-off live query in this session (only MCP wired in) | `alchemy-mcp` |
+| Build app code without an API key (autonomous agent, or explicit x402/MPP) | `agentic-gateway` |
+
 ## Troubleshooting
 
 ### API key not working
@@ -204,7 +214,7 @@ Quick category overview:
 - Confirm the key is valid at [dashboard.alchemy.com](https://dashboard.alchemy.com/)
 - Check if allowlists restrict the key to specific IPs/domains (see `references/operational-allowlists.md`)
 
-### HTTP 429 (Rate Limited)
+### HTTP 429 (rate limited)
 - Use exponential backoff with jitter before retrying
 - Check your compute unit budget in the Alchemy dashboard
 - See `references/operational-rate-limits-and-compute-units.md` for limits per plan
@@ -218,7 +228,7 @@ Quick category overview:
 - Alchemy returns JSON-RPC errors inside the `error` field even with a 200 status code
 - Always check `response.error` in addition to HTTP status
 
-## Official Links
+## Official links
 - [Developer docs](https://www.alchemy.com/docs)
 - [Get Started guide](https://www.alchemy.com/docs/get-started)
-- [Create a free API key](https://www.dashboard.alchemy.com)
+- [Create a free API key](https://dashboard.alchemy.com/)
