@@ -8,17 +8,17 @@ Pick the right skill in two questions:
 
 ```mermaid
 flowchart TD
-    Start([Want to use Alchemy]) --> Q1{Live agent work<br/>or app code?}
+    Start(["Want to use Alchemy"]) --> Q1{"Live agent work<br/>or app code?"}
 
-    Q1 -->|Live work<br/>queries · admin · automation<br/>in this session| Q2{Local setup?}
-    Q1 -->|App code<br/>that ships outside<br/>this session| Q3{Have an<br/>API key?}
+    Q1 -->|"Live work<br/>queries, admin, automation<br/>in this session"| Q2{"Local setup?"}
+    Q1 -->|"App code<br/>that ships outside<br/>this session"| Q3{"Have an<br/>API key?"}
 
-    Q2 -->|@alchemy/cli installed<br/>or both CLI and MCP available| CLI[<b>alchemy-cli</b><br/>preferred local fallback]
-    Q2 -->|Only MCP wired in<br/>no CLI| MCP[<b>alchemy-mcp</b><br/>hosted MCP server]
-    Q2 -->|Neither available| Install[/Install @alchemy/cli/] --> CLI
+    Q2 -->|"CLI installed<br/>(or both CLI and MCP)"| CLI["<b>alchemy-cli</b><br/>preferred local fallback"]
+    Q2 -->|"Only MCP wired in,<br/>no CLI"| MCP["<b>alchemy-mcp</b><br/>hosted MCP server"]
+    Q2 -->|"Neither available"| Install["Install the CLI"] --> CLI
 
-    Q3 -->|Yes, or willing to create one<br/>at dashboard.alchemy.com| API[<b>alchemy-api</b><br/>preferred app-integration path]
-    Q3 -->|No, autonomous agent<br/>paying per-request,<br/>or explicit x402/MPP| GW[<b>agentic-gateway</b><br/>specialized]
+    Q3 -->|"Yes, or willing<br/>to create one"| API["<b>alchemy-api</b><br/>preferred app-integration path"]
+    Q3 -->|"No, autonomous agent,<br/>or explicit x402/MPP"| GW["<b>agentic-gateway</b><br/>specialized"]
 ```
 
 ### 1. Live agent work, or app code?
