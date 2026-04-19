@@ -1,8 +1,8 @@
 ---
 name: alchemy-cli
-description: Use the Alchemy CLI (`@alchemy/cli`) for live blockchain data, transaction lookups, NFT/token/portfolio queries, simulation, webhook management, and Alchemy app administration. Preferred runtime path for live agent work (querying, admin, local automation) when the CLI is installed locally — or when both CLI and MCP are available. If neither is installed, install the CLI with `npm i -g @alchemy/cli`. Use for live agent work in this session, not for building application code that ships to production. For application code, use the `alchemy-api` skill (with API key) or `agentic-gateway` skill (without).
+description: Use the Alchemy CLI (`@alchemy/cli`) for live blockchain data, transaction lookups, NFT/token/portfolio queries, simulation, tracing/debugging, account abstraction (bundler + gas manager), webhook management, Solana RPC/DAS, and Alchemy app administration. Preferred runtime path for live agent work (querying, admin, local automation) when the CLI is installed locally — or when both CLI and MCP are available. If neither is installed, install the CLI with `npm i -g @alchemy/cli`. Use for live agent work in this session, not for building application code that ships to production. For application code, use the `alchemy-api` skill (with API key) or `agentic-gateway` skill (without).
 license: MIT
-compatibility: Requires `@alchemy/cli` (`npm i -g @alchemy/cli`) and shell access. Works across Claude Code, Cursor, Codex, and any agent with shell access.
+compatibility: Requires `@alchemy/cli` (`npm i -g @alchemy/cli`) and shell access. Verified against `@alchemy/cli` 0.6.x. Works across Claude Code, Cursor, Codex, and any agent with shell access.
 metadata:
   author: alchemyplatform
   version: "2.0"
@@ -87,11 +87,23 @@ To log out: `alchemy auth logout`
 
 | Method | Config command | Env var | Used by |
 |--------|---------------|---------|---------|
-| Browser login | `alchemy auth login` | -- | All commands (provides both API key and access key) |
-| API key | `alchemy config set api-key <key>` | `ALCHEMY_API_KEY` | balance, tx, block, rpc, tokens, nfts, transfers, prices, portfolio, simulate, solana |
-| Access key | `alchemy config set access-key <key>` | `ALCHEMY_ACCESS_KEY` | apps, network list |
-| Webhook key | `alchemy config set webhook-api-key <key>` | `ALCHEMY_WEBHOOK_API_KEY` | webhooks |
-| x402 wallet | `alchemy wallet generate` then `alchemy config set x402 true` | `ALCHEMY_WALLET_KEY` | balance, tx, block, rpc, tokens, nfts, transfers |
+| Browser login | `alchemy auth login` | -- | All commands (derives API key + access key from your account) |
+| API key | `alchemy config set api-key <key>` | `ALCHEMY_API_KEY` | `balance`, `tx`, `receipt`, `block`, `gas`, `logs`, `rpc`, `trace`, `debug`, `tokens`, `nfts`, `transfers`, `prices`, `portfolio`, `simulate`, `bundler`, `gas-manager`, `solana` |
+| Access key | `alchemy config set access-key <key>` | `ALCHEMY_ACCESS_KEY` | `apps` (all subcommands incl. `configured-networks`) |
+| Webhook key | `alchemy config set webhook-api-key <key>` | `ALCHEMY_WEBHOOK_API_KEY` | `webhooks` |
+| x402 wallet | `alchemy wallet generate` then `alchemy config set x402 true` | `ALCHEMY_WALLET_KEY` | `balance`, `tx`, `block`, `rpc`, `trace`, `debug`, `tokens`, `nfts`, `transfers` |
+
+`alchemy network list` and `alchemy version` / `update-check` need no auth.
+
+### Selecting a default app
+
+Many `apps` subcommands (and the access-key gated flows) operate on a "default app." If you see `APP_REQUIRED` in an error response, set one:
+
+```bash
+alchemy --json --no-interactive apps select <id>
+# or equivalently
+alchemy --json --no-interactive config set app <id>
+```
 
 Get API/access keys at [dashboard.alchemy.com](https://dashboard.alchemy.com/).
 
@@ -119,18 +131,21 @@ Get API/access keys at [dashboard.alchemy.com](https://dashboard.alchemy.com/).
 | ERC-20 balances (formatted) | `alchemy tokens balances <address> --metadata` |
 | Token metadata | `alchemy tokens metadata <contract>` |
 | Token allowance | `alchemy tokens allowance --owner <addr> --spender <addr> --contract <addr>` |
-| List owned NFTs | `alchemy nfts <address>` |
+| List owned NFTs | `alchemy nfts <address> [--limit <n>] [--page-key <key>]` |
 | NFT metadata | `alchemy nfts metadata --contract <addr> --token-id <id>` |
 | NFT contract metadata | `alchemy nfts contract <address>` |
-| Transfer history | `alchemy transfers <address> --category erc20,erc721` |
+| Transfer history | `alchemy transfers <address> --category erc20,erc721,erc1155,external,internal,specialnft [--from-block <n>] [--to-block <n>] [--max-count <n>] [--page-key <key>]` |
 | Spot prices by symbol | `alchemy prices symbol ETH,USDC` |
 | Spot prices by address | `alchemy prices address --addresses '<json>'` |
 | Historical prices | `alchemy prices historical --body '<json>'` |
-| Token portfolio | `alchemy portfolio tokens --body '<json>'` |
-| NFT portfolio | `alchemy portfolio nfts --body '<json>'` |
-| Portfolio transactions | `alchemy portfolio transactions --body '<json>'` |
-| Simulate asset changes | `alchemy simulate asset-changes --tx '<json>'` |
-| Simulate execution | `alchemy simulate execution --tx '<json>'` |
+| Cross-network token portfolio | `alchemy portfolio tokens --body '<json>'` |
+| Token balances by address/network pairs | `alchemy portfolio token-balances --body '<json>'` |
+| Cross-network NFT portfolio | `alchemy portfolio nfts --body '<json>'` |
+| NFT contracts by address/network pairs | `alchemy portfolio nft-contracts --body '<json>'` |
+| Simulate single tx (asset deltas) | `alchemy simulate asset-changes --tx '<json>' [--block-tag <tag>]` |
+| Simulate single tx (execution trace) | `alchemy simulate execution --tx '<json>' [--block-tag <tag>]` |
+| Simulate bundle (asset deltas) | `alchemy simulate asset-changes-bundle --txs '<json-array>' [--block-tag <tag>]` |
+| Simulate bundle (execution trace) | `alchemy simulate execution-bundle --txs '<json-array>' [--block-tag <tag>]` |
 
 ### Solana
 
@@ -144,23 +159,47 @@ Get API/access keys at [dashboard.alchemy.com](https://dashboard.alchemy.com/).
 | Task | Command |
 |------|---------|
 | List webhooks | `alchemy webhooks list` |
-| Create webhook | `alchemy webhooks create --body '<json>'` |
-| Update webhook | `alchemy webhooks update --body '<json>'` |
-| Delete webhook | `alchemy webhooks delete <id>` |
+| Create webhook | `alchemy webhooks create --body '<json>' [--dry-run]` |
+| Update webhook | `alchemy webhooks update --body '<json>' [--dry-run]` |
+| Delete webhook | `alchemy webhooks delete <id> [--yes] [--dry-run]` |
+| Get address-activity webhook addresses | `alchemy webhooks addresses <id>` |
+| Get NFT-activity webhook filters | `alchemy webhooks nft-filters <id>` |
+
+### Account abstraction (ERC-4337)
+
+| Task | Command |
+|------|---------|
+| Send a UserOperation | `alchemy bundler send-user-operation --user-op '<json>' --entry-point <addr>` |
+| Estimate UserOperation gas | `alchemy bundler estimate-user-operation-gas --user-op '<json>' --entry-point <addr> [--state-override '<json>']` |
+| Get UserOperation receipt | `alchemy bundler get-user-operation-receipt --user-op-hash <hash>` |
+| Request gas + paymaster data | `alchemy gas-manager request-gas-and-paymaster --body '<json>'` |
+| Request paymaster token quote | `alchemy gas-manager request-paymaster-token-quote --body '<json>'` |
+
+### Wallet (x402)
+
+| Task | Command |
+|------|---------|
+| Generate a new wallet | `alchemy wallet generate` |
+| Import a wallet from a key file | `alchemy wallet import <path>` |
+| Show the locally configured wallet address | `alchemy wallet address` |
 
 ### App management
 
 | Task | Command |
 |------|---------|
-| List apps | `alchemy apps list` |
+| List apps | `alchemy apps list [--cursor <c>] [--limit <n>] [--all] [--search <q>] [--id <appId>]` |
 | Get app details | `alchemy apps get <id>` |
-| Create app | `alchemy apps create --name "My App" --networks eth-mainnet` |
-| Update app metadata | `alchemy apps update <id> --name "New Name"` |
-| Update app network allowlist | `alchemy apps networks <id> --networks eth-mainnet,base-mainnet` |
-| Delete app | `alchemy apps delete <id>` |
+| Create app | `alchemy apps create --name "My App" --networks eth-mainnet [--description <desc>] [--products <ids>] [--dry-run]` |
+| Update app metadata | `alchemy apps update <id> --name "New Name" [--description <desc>] [--dry-run]` |
+| Update app network allowlist | `alchemy apps networks <id> --networks eth-mainnet,base-mainnet [--dry-run]` |
+| Update app address allowlist | `alchemy apps address-allowlist <id> --addresses 0xAA,0xBB [--dry-run]` |
+| Update app origin allowlist | `alchemy apps origin-allowlist <id> --origins https://a.com,https://b.com [--dry-run]` |
+| Update app IP allowlist | `alchemy apps ip-allowlist <id> --ips 1.2.3.4,5.6.7.8 [--dry-run]` |
+| Delete app | `alchemy apps delete <id> [--yes] [--dry-run]` |
+| Select default app | `alchemy apps select <id>` (equivalent to `alchemy config set app <id>`) |
 | List networks configured for an app | `alchemy apps configured-networks [--app-id <id>]` |
 | List Admin API chain identifiers (for `apps create`/`update`) | `alchemy apps chains` |
-| List all RPC network slugs (for `--network`) | `alchemy network list` |
+| List all RPC network slugs (for `--network`) | `alchemy network list [--mainnet-only] [--testnet-only] [--search <term>]` |
 
 ### CLI admin
 
@@ -175,30 +214,43 @@ Get API/access keys at [dashboard.alchemy.com](https://dashboard.alchemy.com/).
 
 | Flag | Description |
 |------|-------------|
-| `--json` | Force JSON output |
+| `--json` | Force JSON output (auto-enabled when piped) |
 | `--no-interactive` | Disable prompts and REPL |
-| `-n, --network <network>` | Target network (default: `eth-mainnet`) |
-| `--api-key <key>` | Override API key per command |
-| `--access-key <key>` | Override access key per command |
-| `--x402` | Use x402 wallet auth for this command |
+| `-n, --network <network>` | Target network (default: `eth-mainnet`, env: `ALCHEMY_NETWORK`) |
+| `--api-key <key>` | Override API key per command (env: `ALCHEMY_API_KEY`) |
+| `--access-key <key>` | Override access key per command (env: `ALCHEMY_ACCESS_KEY`) |
+| `--x402` | Use x402 wallet-based gateway auth for this command |
+| `--wallet-key-file <path>` | Path to wallet private key file (for x402) |
 | `--timeout <ms>` | Request timeout in milliseconds |
 | `-q, --quiet` | Suppress non-essential output |
 | `--verbose` | Log request/response details to stderr |
+| `--debug` | Enable debug diagnostics |
+| `--no-color` | Disable color output |
+| `--reveal` | Show secrets in plain text (use with care; intended for explicit reveal flows) |
 
 ## Error handling
 
-Errors return structured JSON on stderr. Key error codes:
+Errors return structured JSON on stderr. Each error has a `code`, an `exitCode` (1–9), a `retryable` boolean, and a `recovery` hint. Key codes (from `agent-prompt`):
 
-| Code | Retryable | Recovery |
-|------|-----------|----------|
-| `AUTH_REQUIRED` | No | Run `alchemy auth login`, or set `ALCHEMY_API_KEY` / `alchemy config set api-key <key>` |
-| `RATE_LIMITED` | Yes | Wait and retry with backoff |
-| `PAYMENT_REQUIRED` | No | Fund x402 wallet or switch to API key auth |
-| `RPC_ERROR` | No | Check method, params, and network |
-| `NETWORK_ERROR` | Yes | Check connection and retry |
-| `SETUP_REQUIRED` | No | Run `alchemy --json setup status` and follow `nextCommands` |
+| Code | Exit | Retryable | Recovery |
+|------|------|-----------|----------|
+| `AUTH_REQUIRED` | 3 | No | Run `alchemy auth login`, or set `ALCHEMY_API_KEY` / `alchemy config set api-key <key>` |
+| `INVALID_API_KEY` | 3 | No | Check the API key; set a valid one with `alchemy config set api-key <key>` |
+| `ACCESS_KEY_REQUIRED` | 3 | No | Set `ALCHEMY_ACCESS_KEY` or run `alchemy config set access-key <key>` |
+| `INVALID_ACCESS_KEY` | 3 | No | Check the access key at [dashboard.alchemy.com](https://dashboard.alchemy.com/) |
+| `APP_REQUIRED` | 3 | No | Select a default app: `alchemy apps select <id>` (or `alchemy config set app <id>`) |
+| `NETWORK_NOT_ENABLED` | 3 | No | Enable the target network for your app at dashboard.alchemy.com |
+| `SETUP_REQUIRED` | 3 | No | Run `alchemy --json setup status` and follow `nextCommands` |
+| `PAYMENT_REQUIRED` | 9 | No | Fund x402 wallet or switch to API key auth |
+| `RATE_LIMITED` | 5 | Yes | Wait and retry with backoff; consider upgrading your plan |
+| `NETWORK_ERROR` | 6 | Yes | Check connection and retry |
+| `RPC_ERROR` | 7 | No | Check method, params, and network; verify API key has access |
+| `ADMIN_API_ERROR` | 8 | No | Check error message; verify access key permissions |
+| `NOT_FOUND` | 4 | No | Verify the resource identifier (address, hash, id) is correct |
+| `INVALID_ARGS` | 2 | No | Check command usage via `alchemy --json help <command>` |
+| `INTERNAL_ERROR` | 1 | No | Unexpected error; retry or report a bug |
 
-For the full error code list, see `agent-prompt` output.
+Get the full canonical list any time with `alchemy --json --no-interactive agent-prompt`.
 
 ## Handing off to other skills
 
