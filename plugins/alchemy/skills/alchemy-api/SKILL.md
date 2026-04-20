@@ -46,21 +46,41 @@ You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unles
 
 ### Bridging from the CLI to an API key
 
-If `@alchemy/cli` is installed locally (verify with `command -v alchemy`), use it to obtain a key without leaving the terminal:
+If `@alchemy/cli` is installed locally (verify with `command -v alchemy`), use it to obtain a key without leaving the terminal **and persist it to the project's `.env` file** so it survives across terminal sessions and is available to the app at runtime.
 
 ```bash
-# 1. If a key is already cached in the CLI config, just export it and skip the rest.
-export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+# 1. Try to read a cached key from the CLI config.
+KEY="$(alchemy --no-interactive --json --reveal config get api-key 2>/dev/null | jq -r .value)"
 
-# 2. If step 1 returns an error (no key cached), authenticate and select an app first:
-alchemy auth login                            # browser flow; derives auth credentials from your Alchemy account
-alchemy --no-interactive --json apps select   # interactive picker (or pass <id>); sets the default app
+# 2. If empty/null (no key cached yet), authenticate and pick a default app first.
+if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
+  alchemy auth login                            # browser flow; derives auth credentials
+  alchemy --no-interactive --json apps select   # interactive picker (or pass <id>)
+  KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+fi
 
-# 3. Then re-run step 1 to export the key for application code.
-export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+# 3. Persist to the project's .env (standard practice for app code so the key
+#    survives terminal restarts and is loaded by dotenv / framework env loaders).
+#    Use .env.local instead if your framework expects that (e.g. Next.js).
+ENV_FILE=".env"   # or ".env.local" depending on the project convention
+touch "$ENV_FILE"
+if grep -q '^ALCHEMY_API_KEY=' "$ENV_FILE"; then
+  # Replace existing line in-place (portable across BSD/GNU sed)
+  sed -i.bak "s|^ALCHEMY_API_KEY=.*|ALCHEMY_API_KEY=$KEY|" "$ENV_FILE" && rm "$ENV_FILE.bak"
+else
+  echo "ALCHEMY_API_KEY=$KEY" >> "$ENV_FILE"
+fi
+
+# 4. Make sure the env file is git-ignored.
+grep -qxF "$ENV_FILE" .gitignore 2>/dev/null || echo "$ENV_FILE" >> .gitignore
+
+# 5. Also export to the current shell so the agent can immediately call the API.
+export ALCHEMY_API_KEY="$KEY"
 ```
 
-> **Why this works:** the CLI is a runtime executor (`alchemy-cli` skill). When the user has it installed, you can use it to provision the credential that this app-code skill needs, then hand off to the rest of the `alchemy-api` flow. After exporting `ALCHEMY_API_KEY`, continue with the [Base URLs + auth](#base-urls--auth-cheat-sheet) and [Quickstart](#one-file-quickstart-copypaste) below.
+> **Why we persist to `.env`:** without it, the key is only set for the current shell session and disappears when the terminal tab closes. App code typically loads `.env` via `dotenv` (Node), `python-dotenv` (Python), `direnv`, or framework-native loaders (Next.js, Vite, Bun, Deno, Rails, etc.), so writing to `.env` is the canonical way to make the key durable for both `npm run dev` and the deployed app's local copy.
+
+> **Why this whole flow works:** the CLI is a runtime executor (`alchemy-cli` skill). When the user has it installed, you can use it to provision the credential that this app-code skill needs, write it to a place the application will load, then hand off to the rest of the `alchemy-api` flow. After step 5, continue with the [Base URLs + auth](#base-urls--auth-cheat-sheet) and [Quickstart](#one-file-quickstart-copypaste) below.
 
 > **Gotcha:** if `auth login` succeeded but `config get api-key` still returns "not found," the CLI's `setup status` may have falsely reported `complete: true` with only an `auth_token`. Re-run `alchemy --no-interactive --json apps select` to bind a default app, then retry. See the `alchemy-cli` skill for the same gotcha documented under Preflight.
 

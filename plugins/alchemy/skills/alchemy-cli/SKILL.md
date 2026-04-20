@@ -262,21 +262,36 @@ Get the full canonical list any time with `alchemy --json --no-interactive agent
 
 ### Bridging into the `alchemy-api` flow (extract an API key)
 
-If the user is starting an app-code project and `$ALCHEMY_API_KEY` isn't set in their shell, you can use the CLI to fetch a key from their Alchemy account and export it for the `alchemy-api` flow — no trip to the dashboard required:
+If the user is starting an app-code project and `$ALCHEMY_API_KEY` isn't set in their shell, use the CLI to fetch a key from their Alchemy account, **persist it to the project's `.env`** so it survives across terminal sessions, and export it for the current shell so the agent can use it immediately:
 
 ```bash
-# 1. If a key is already cached in CLI config, just export it:
-export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+# 1. Try to read a cached key from CLI config.
+KEY="$(alchemy --no-interactive --json --reveal config get api-key 2>/dev/null | jq -r .value)"
 
-# 2. If step 1 errors with NOT_FOUND, authenticate and pick an app first:
-alchemy auth login                            # browser flow; sets up account credentials
-alchemy --no-interactive --json apps select   # interactive picker (or pass <id>); sets the default app
+# 2. If empty/null, authenticate and pick an app first.
+if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
+  alchemy auth login                            # browser flow; sets up account credentials
+  alchemy --no-interactive --json apps select   # interactive picker (or pass <id>)
+  KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+fi
 
-# 3. Then re-run step 1 to export the key.
-export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+# 3. Persist to the project's .env (standard practice — survives terminal restarts
+#    and gets loaded by dotenv / framework env loaders at runtime).
+#    Use .env.local if the project's framework expects that (e.g. Next.js).
+ENV_FILE=".env"
+touch "$ENV_FILE"
+if grep -q '^ALCHEMY_API_KEY=' "$ENV_FILE"; then
+  sed -i.bak "s|^ALCHEMY_API_KEY=.*|ALCHEMY_API_KEY=$KEY|" "$ENV_FILE" && rm "$ENV_FILE.bak"
+else
+  echo "ALCHEMY_API_KEY=$KEY" >> "$ENV_FILE"
+fi
+grep -qxF "$ENV_FILE" .gitignore 2>/dev/null || echo "$ENV_FILE" >> .gitignore
+
+# 4. Export to the current shell so the agent can call the API immediately.
+export ALCHEMY_API_KEY="$KEY"
 ```
 
-Hand off to the `alchemy-api` skill once `ALCHEMY_API_KEY` is exported.
+Hand off to the `alchemy-api` skill once `.env` has the key and `ALCHEMY_API_KEY` is exported.
 
 ## Official links
 
