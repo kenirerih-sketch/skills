@@ -18,6 +18,7 @@ flowchart TD
     Q2 -->|"Neither available"| Install["Install the CLI"] --> CLI
 
     Q3 -->|"Yes, or willing<br/>to create one"| API["<b>alchemy-api</b><br/>preferred app-integration path"]
+    Q3 -->|"No key, but<br/>@alchemy/cli installed"| Bridge["Use CLI to fetch a key<br/>from the user's account"] --> API
     Q3 -->|"No, autonomous agent,<br/>or explicit x402/MPP"| GW["<b>agentic-gateway</b><br/>specialized"]
 ```
 
@@ -35,6 +36,7 @@ flowchart TD
 | **Live agent work** + only an MCP server is wired into the client (no CLI) | `alchemy-mcp` |
 | **Live agent work** + neither is available | install `@alchemy/cli` (`npm i -g @alchemy/cli`), then use `alchemy-cli` |
 | **App code** + you have or can create an Alchemy API key | `alchemy-api` (preferred app-integration path) |
+| **App code** + no API key in env, **but** `@alchemy/cli` is installed locally | `alchemy-api` after using the CLI to fetch a key (`alchemy auth login` → `alchemy apps select` → `alchemy --reveal config get api-key`) |
 | **App code** + no API key, autonomous agent paying per-request, or you explicitly want x402/MPP | `agentic-gateway` (specialized) |
 
 Each skill self-routes — its `When to use this skill` / `When to use a different skill` sections will redirect you if you land on the wrong one.

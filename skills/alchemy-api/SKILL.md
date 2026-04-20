@@ -37,11 +37,32 @@ Before writing application code or making any network call:
 
 1. Confirm the user is building **application code** (not asking the agent to run a live query). If the user is asking for live work, redirect to `alchemy-cli` (preferred) or `alchemy-mcp`.
 2. Check `$ALCHEMY_API_KEY` is set (e.g. `echo $ALCHEMY_API_KEY`).
-3. If `$ALCHEMY_API_KEY` is unset or empty:
+3. If `$ALCHEMY_API_KEY` is unset or empty, take the first of these that applies:
+   - **CLI bridge (recommended if `@alchemy/cli` is installed locally):** the CLI can fetch a key from the user's Alchemy account so they never have to leave the terminal. See [Bridging from the CLI to an API key](#bridging-from-the-cli-to-an-api-key) below.
    - Tell the user they can create a free API key at [https://dashboard.alchemy.com/](https://dashboard.alchemy.com/), **or**
    - Switch to the `agentic-gateway` skill (x402/MPP gateway, wallet-based auth, no API key needed).
 
 You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unless the user explicitly asks for that endpoint. No public RPC endpoints (publicnode, llamarpc, cloudflare-eth, etc.) as a fallback.
+
+### Bridging from the CLI to an API key
+
+If `@alchemy/cli` is installed locally (verify with `command -v alchemy`), use it to obtain a key without leaving the terminal:
+
+```bash
+# 1. If a key is already cached in the CLI config, just export it and skip the rest.
+export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+
+# 2. If step 1 returns an error (no key cached), authenticate and select an app first:
+alchemy auth login                            # browser flow; derives auth credentials from your Alchemy account
+alchemy --no-interactive --json apps select   # interactive picker (or pass <id>); sets the default app
+
+# 3. Then re-run step 1 to export the key for application code.
+export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+```
+
+> **Why this works:** the CLI is a runtime executor (`alchemy-cli` skill). When the user has it installed, you can use it to provision the credential that this app-code skill needs, then hand off to the rest of the `alchemy-api` flow. After exporting `ALCHEMY_API_KEY`, continue with the [Base URLs + auth](#base-urls--auth-cheat-sheet) and [Quickstart](#one-file-quickstart-copypaste) below.
+
+> **Gotcha:** if `auth login` succeeded but `config get api-key` still returns "not found," the CLI's `setup status` may have falsely reported `complete: true` with only an `auth_token`. Re-run `alchemy --no-interactive --json apps select` to bind a default app, then retry. See the `alchemy-cli` skill for the same gotcha documented under Preflight.
 
 ## Summary
 

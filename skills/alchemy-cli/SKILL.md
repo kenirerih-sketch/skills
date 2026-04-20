@@ -260,6 +260,24 @@ Get the full canonical list any time with `alchemy --json --no-interactive agent
 | Wire Alchemy into application code without an API key, or pay-per-request as an autonomous agent | `agentic-gateway` |
 | Run live work but the CLI isn't installed and they prefer not to install it (MCP is wired in) | `alchemy-mcp` |
 
+### Bridging into the `alchemy-api` flow (extract an API key)
+
+If the user is starting an app-code project and `$ALCHEMY_API_KEY` isn't set in their shell, you can use the CLI to fetch a key from their Alchemy account and export it for the `alchemy-api` flow — no trip to the dashboard required:
+
+```bash
+# 1. If a key is already cached in CLI config, just export it:
+export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+
+# 2. If step 1 errors with NOT_FOUND, authenticate and pick an app first:
+alchemy auth login                            # browser flow; sets up account credentials
+alchemy --no-interactive --json apps select   # interactive picker (or pass <id>); sets the default app
+
+# 3. Then re-run step 1 to export the key.
+export ALCHEMY_API_KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
+```
+
+Hand off to the `alchemy-api` skill once `ALCHEMY_API_KEY` is exported.
+
 ## Official links
 
 - [CLI on npm](https://www.npmjs.com/package/@alchemy/cli)
