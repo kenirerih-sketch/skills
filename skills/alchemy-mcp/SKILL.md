@@ -121,7 +121,7 @@ Then `select_app` against the new app.
 
 ## Tool catalog
 
-The server exposes **159 tools** across three categories. All RPC and Data tools require `select_app` to be called first.
+The server exposes **159 tools** across three categories.
 
 ### Admin (8 tools) — Account & app management
 

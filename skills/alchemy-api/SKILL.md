@@ -48,14 +48,19 @@ You MUST NOT call any keyless or public fallback (including `.../v2/demo`) unles
 
 If `@alchemy/cli` is installed locally (verify with `command -v alchemy`), use it to obtain a key without leaving the terminal **and persist it to the project's `.env` file** so it survives across terminal sessions and is available to the app at runtime.
 
+> **Security:** NEVER echo, print, or otherwise surface the extracted API key value in conversation output. Refer to it only as `$ALCHEMY_API_KEY` after exporting. Treat it the same as a password.
+
 ```bash
-# 1. Try to read a cached key from the CLI config.
+# 1. Try to read a cached key from the CLI config (read-only, safe to run non-interactively).
 KEY="$(alchemy --no-interactive --json --reveal config get api-key 2>/dev/null | jq -r .value)"
 
-# 2. If empty/null (no key cached yet), authenticate and pick a default app first.
+# 2. If empty/null (no key cached yet), run the interactive flow.
+#    Note: auth login opens a browser and apps select shows a picker, so do NOT pass
+#    --no-interactive here. If you already know the app id, pass it explicitly to skip
+#    the picker: `alchemy --no-interactive --json apps select <id>`.
 if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
-  alchemy auth login                            # browser flow; derives auth credentials
-  alchemy --no-interactive --json apps select   # interactive picker (or pass <id>)
+  alchemy auth login              # opens browser; derives auth credentials
+  alchemy --json apps select      # interactive picker (omit --no-interactive so it can render)
   KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
 fi
 
@@ -82,7 +87,7 @@ export ALCHEMY_API_KEY="$KEY"
 
 > **Why this whole flow works:** the CLI is a runtime executor (`alchemy-cli` skill). When the user has it installed, you can use it to provision the credential that this app-code skill needs, write it to a place the application will load, then hand off to the rest of the `alchemy-api` flow. After step 5, continue with the [Base URLs + auth](#base-urls--auth-cheat-sheet) and [Quickstart](#one-file-quickstart-copypaste) below.
 
-> **Gotcha:** if `auth login` succeeded but `config get api-key` still returns "not found," the CLI's `setup status` may have falsely reported `complete: true` with only an `auth_token`. Re-run `alchemy --no-interactive --json apps select` to bind a default app, then retry. See the `alchemy-cli` skill for the same gotcha documented under Preflight.
+> **Gotcha:** if `auth login` succeeded but `config get api-key` still returns "not found," the CLI's `setup status` may have falsely reported `complete: true` with only an `auth_token`. Re-run `alchemy --json apps select` (or pass an explicit `<id>` with `--no-interactive`) to bind a default app, then retry. See the `alchemy-cli` skill for the same gotcha documented under Preflight.
 
 ## Summary
 

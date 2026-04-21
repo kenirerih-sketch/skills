@@ -262,16 +262,21 @@ Get the full canonical list any time with `alchemy --json --no-interactive agent
 
 ### Bridging into the `alchemy-api` flow (extract an API key)
 
-If the user is starting an app-code project and `$ALCHEMY_API_KEY` isn't set in their shell, use the CLI to fetch a key from their Alchemy account, **persist it to the project's `.env`** so it survives across terminal sessions, and export it for the current shell so the agent can use it immediately:
+If the user is starting an app-code project and `$ALCHEMY_API_KEY` isn't set in their shell, use the CLI to fetch a key from their Alchemy account, **persist it to the project's `.env`** so it survives across terminal sessions, and export it for the current shell so the agent can use it immediately.
+
+> **Security:** NEVER echo, print, or otherwise surface the extracted API key value in conversation output. Refer to it only as `$ALCHEMY_API_KEY` after exporting. Treat it the same as a password.
 
 ```bash
-# 1. Try to read a cached key from CLI config.
+# 1. Try to read a cached key from CLI config (read-only, safe non-interactive).
 KEY="$(alchemy --no-interactive --json --reveal config get api-key 2>/dev/null | jq -r .value)"
 
-# 2. If empty/null, authenticate and pick an app first.
+# 2. If empty/null, run the interactive flow.
+#    Note: auth login opens a browser and apps select shows a picker, so do NOT
+#    pass --no-interactive here. If you already know the app id, pass it
+#    explicitly to skip the picker: `alchemy --no-interactive --json apps select <id>`.
 if [ -z "$KEY" ] || [ "$KEY" = "null" ]; then
-  alchemy auth login                            # browser flow; sets up account credentials
-  alchemy --no-interactive --json apps select   # interactive picker (or pass <id>)
+  alchemy auth login              # opens browser; sets up account credentials
+  alchemy --json apps select      # interactive picker (omit --no-interactive so it can render)
   KEY="$(alchemy --no-interactive --json --reveal config get api-key | jq -r .value)"
 fi
 
