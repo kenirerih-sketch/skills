@@ -7,7 +7,12 @@ import shutil
 from pathlib import Path
 
 
-SKILL_NAMES = ("alchemy-codex", "alchemy-api", "agentic-gateway")
+SKILL_NAMES = (
+    "alchemy-cli",
+    "alchemy-mcp",
+    "alchemy-api",
+    "agentic-gateway",
+)
 
 
 def main() -> None:

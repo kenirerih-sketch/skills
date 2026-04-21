@@ -345,10 +345,22 @@ Result is the transaction hash. Use `eth_getTransactionReceipt` to check if it w
 - Handle HTTP `429` (rate limit) with exponential backoff.
 - Handle JSON-RPC errors in the response body (`error.code`, `error.message`).
 
-## Agentic Gateway
+## Other ways to access this API
 
-This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy balance 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --json --no-interactive
+  alchemy block latest
+  alchemy gas
+  alchemy rpc eth_getTransactionReceipt 0x3847245c01829b...
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `ethBlockNumber`, `ethGetBalance`, `ethCall`, `ethGetLogs`, `ethGetTransactionReceipt`, `ethGetBlockByNumber` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/v2` (x402) or `https://mpp.alchemy.com/{chainNetwork}/v2` (MPP).
 
 ## Official Docs
 - [Chain APIs Overview](https://www.alchemy.com/docs/reference/chain-apis-overview)

@@ -2,6 +2,10 @@
 
 Complete index of all reference files organized by product area. Use the Endpoint Selector in SKILL.md for quick routing to the most common tasks.
 
+> **Wrong skill?** This index belongs to `alchemy-api`, the app-code-with-API-key path. For other paths:
+> - **Live agent work** in this session: use `alchemy-cli` if `@alchemy/cli` is installed locally, otherwise `alchemy-mcp` (hosted MCP server).
+> - **App code without an API key** (autonomous agent, or explicit x402/MPP): use `agentic-gateway`.
+
 ## Node
 | File | Name | Short Description |
 | --- | --- | --- |
@@ -52,6 +56,19 @@ Complete index of all reference files organized by product area. Use the Endpoin
 | `references/solana-grpc-subscribe-transactions.md` | Subscribe Transactions | Transaction streams deliver raw or decoded transaction data in near real-time |
 | `references/solana-rpc.md` | Solana JSON-RPC | Standard Solana JSON-RPC endpoints for account, program, and transaction data |
 | `references/solana-wallets.md` | Solana Wallet Integration | High-level guidance for integrating Solana wallets and signing transactions |
+
+## Sui gRPC
+| File | Name | Short Description |
+| --- | --- | --- |
+| `references/sui-grpc-overview.md` | sui-grpc | High-performance gRPC API for Sui blockchain access. Supports objects, transactions, balances, Move packages, name service, subscriptions, and signature verification. Use when building Sui integrations that need typed, efficient access with streaming and field masking |
+| `references/sui-grpc-quickstart.md` | Sui gRPC Quickstart | Endpoints, authentication, and first gRPC calls for Sui |
+| `references/sui-grpc-objects-and-ledger.md` | Sui gRPC Objects and Ledger | LedgerService: query objects, transactions, checkpoints, and epochs |
+| `references/sui-grpc-transactions.md` | Sui gRPC Transactions | TransactionExecutionService: execute and simulate Sui transactions |
+| `references/sui-grpc-state-and-balances.md` | Sui gRPC State and Balances | StateService: coin balances, dynamic fields, and owned objects |
+| `references/sui-grpc-move-packages.md` | Sui gRPC Move Packages | MovePackageService: inspect Move packages, functions, and data types |
+| `references/sui-grpc-name-service.md` | Sui gRPC Name Service | NameService: resolve SuiNS names to addresses and reverse lookups |
+| `references/sui-grpc-subscriptions.md` | Sui gRPC Subscriptions | SubscriptionService: stream real-time checkpoint data |
+| `references/sui-grpc-signature-verification.md` | Sui gRPC Signature Verification | SignatureVerificationService: verify user signatures including ZkLogin |
 
 ## Wallets
 | File | Name | Short Description |

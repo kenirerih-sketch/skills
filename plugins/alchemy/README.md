@@ -24,28 +24,29 @@ Keep the source-of-truth skills in [`skills/`](../../skills) and keep the instal
 
 That split matches how `openai/skills` treats skills as the primary public artifact while still letting this repo ship a Codex-specific packaging layer.
 
-## Included Skills
+## Included skills
 
-- `alchemy-codex` routes the user to the right Alchemy auth flow before implementation starts.
-- `alchemy-api` covers standard API key-based access to Alchemy RPC, Data APIs, Webhooks, Solana, Wallets, and related integrations.
-- `agentic-gateway` covers the Alchemy gateway flow for API key, x402, or MPP-based access.
+The plugin bundles all four Alchemy skills from the repo. Each skill self-routes based on its `When to use this skill` and `When to use a different skill` sections — there is no separate router skill.
+
+- **`alchemy-cli`** — Live agent work via the local `@alchemy/cli` (preferred local fallback).
+- **`alchemy-mcp`** — Live agent work via the hosted MCP server (`https://mcp.alchemy.com/mcp`) when the CLI is not installed.
+- **`alchemy-api`** — App code with a standard API key (preferred app-integration path).
+- **`agentic-gateway`** — App code without an API key, using x402 or MPP (specialized).
 
 ## Naming
 
 - Plugin name: `alchemy`
-- Codex-only router skill name: `alchemy-codex`
-
-This keeps the installable plugin broad while making the router skill explicitly Codex-specific.
 
 ## Why this plugin exists
 
-The public `skills/` repo already contains reusable Alchemy skills, but not an installable Codex plugin package. This plugin bundles those public skills into a single installable unit and adds a lightweight router skill so users can start from a single `alchemy-codex` entry point.
+The public `skills/` repo already contains reusable Alchemy skills, but not an installable Codex plugin package. This plugin bundles those public skills into a single installable unit so Codex users can install all of them at once.
 
 ## Maintenance
 
 Edit the source skills first:
 
-- [`skills/alchemy-codex`](../../skills/alchemy-codex)
+- [`skills/alchemy-cli`](../../skills/alchemy-cli)
+- [`skills/alchemy-mcp`](../../skills/alchemy-mcp)
 - [`skills/alchemy-api`](../../skills/alchemy-api)
 - [`skills/agentic-gateway`](../../skills/agentic-gateway)
 

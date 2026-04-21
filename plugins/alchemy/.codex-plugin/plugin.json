@@ -19,8 +19,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Alchemy",
-    "shortDescription": "Tools for crypto app development, data, and infrastructure",
-    "longDescription": "Bundles Alchemy's public skills for routing between API key and gateway auth, building with JSON-RPC and Data APIs, and integrating deeper Alchemy platform features.",
+    "shortDescription": "Tools for crypto app development, live agent work, data, and infrastructure",
+    "longDescription": "Bundles Alchemy's public skills: alchemy-cli (live work via local CLI), alchemy-mcp (live work via hosted MCP server), alchemy-api (app code with API key), and agentic-gateway (app code with x402/MPP). Each skill self-routes — pick the path that matches whether you're doing live agent work or wiring Alchemy into application code.",
     "developerName": "Alchemy",
     "category": "Developer Tools",
     "capabilities": [
@@ -31,8 +31,8 @@
     "privacyPolicyURL": "https://legal.alchemy.com/",
     "termsOfServiceURL": "https://legal.alchemy.com/#contract-sblyf8eub",
     "defaultPrompt": [
-      "Build a crypto prices dashboard in React",
-      "Sign up and prepay for compute autonomously using x402",
+      "Use the Alchemy CLI to fetch the latest ETH block and my token balances",
+      "Build a crypto prices dashboard in React using my Alchemy API key",
       "Build a Solana asset viewer using the DAS API"
     ],
     "composerIcon": "./assets/alchemy-plugin.png",

@@ -34,6 +34,9 @@ High-level integration notes for Alchemy Wallets and smart wallet tooling. This 
 ## Cross-References
 - `node-apis` skill for EVM connectivity.
 - `solana` skill for Solana RPC and data.
+- `alchemy-cli` skill for live agent work via the local CLI (preferred local fallback).
+- `alchemy-mcp` skill for live agent work via the hosted MCP server (when CLI is not installed).
+- `agentic-gateway` skill for app code without an API key (x402 or MPP).
 
 ## Official Docs
 - [Smart Wallets](https://www.alchemy.com/docs/wallets)

@@ -128,10 +128,20 @@ curl -s -X POST https://eth-mainnet.g.alchemy.com/v2/$ALCHEMY_API_KEY \
 - Use narrow block ranges for polling patterns to reduce compute unit usage.
 - The `internal` category tracks internal EVM calls and is only available on Ethereum Mainnet and Polygon Mainnet.
 
-## Agentic Gateway
+## Other ways to access this API
 
-This API is also available via `https://x402.alchemy.com/{chainNetwork}/v2` without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy transfers 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --category erc20,erc721,erc1155,external,internal --json --no-interactive
+  alchemy transfers 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045 --category erc20 --from-block 0x1312D00 --to-block latest
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then:
+  `getAssetTransfers` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same API exposed at `https://x402.alchemy.com/{chainNetwork}/v2` (x402) or `https://mpp.alchemy.com/{chainNetwork}/v2` (MPP).
 
 ## Official Docs
 - [Transfers API Quickstart](https://www.alchemy.com/docs/reference/transfers-api-quickstart)

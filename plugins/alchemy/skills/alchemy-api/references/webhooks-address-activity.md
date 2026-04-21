@@ -10,7 +10,7 @@ related:
   - webhooks-webhook-payloads.md
   - webhooks-verify-signatures.md
   - data-transfers-api.md
-updated: 2026-02-05
+updated: 2026-04-15
 ---
 # Address Activity Webhooks
 
@@ -32,10 +32,15 @@ Update addresses (`PATCH /update-webhook-addresses`) with:
 - `addresses_to_add[]` (required, empty array if none)
 - `addresses_to_remove[]` (required, empty array if none)
 
+## Chain Support
+- Supports 30+ EVM chains (ETH, ERC-20, ERC-721, ERC-1155 transfers).
+- Now available on Solana (no longer beta).
+
 ## Configuration Notes
 - Provide one or more addresses to watch.
 - Choose event categories (native, ERC-20, ERC-721, ERC-1155).
 - Decide if you need internal transfers.
+- Maximum of 100,000 addresses per webhook.
 
 ## Payload Expectations
 - Expect an array of activities with tx hash, from/to, value, token metadata.

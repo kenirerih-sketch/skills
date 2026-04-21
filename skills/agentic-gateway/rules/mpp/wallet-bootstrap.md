@@ -1,10 +1,10 @@
 # Wallet & Payment Setup
 
-> **Skip this entirely if `ALCHEMY_API_KEY` is set.** Wallet setup is only needed for the MPP gateway flow.
+> **You're in the MPP gateway flow.** This means the user is building app code without an Alchemy API key (or has explicitly chosen MPP). If they actually have an API key and want a normal app integration, redirect them to the `alchemy-api` skill. If they want live agent work in this session (queries, admin, automation), redirect them to `alchemy-cli` (preferred) or `alchemy-mcp`.
 
 Use this rule when the MPP gateway flow needs a wallet. If a wallet file (e.g. `wallet-key.txt`) already exists on disk, use it and proceed directly to authentication.
 
-**This is the mandatory entry point for MPP gateway requests when no API key is available.** No data can be fetched until setup is complete. If the user asks a blockchain question and no wallet is configured (and no API key is set), redirect them here first. Do NOT mention the API key or suggest obtaining one — go straight to setup.
+**This is the mandatory entry point for MPP gateway app code.** No data can be fetched until setup is complete. Do NOT mention obtaining an API key as an alternative — the user has intentionally chosen this skill — go straight to setup.
 
 ## Step 1: Choose a Payment Method (Hard Requirement)
 

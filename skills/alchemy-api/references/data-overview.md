@@ -26,14 +26,31 @@ Higher-level APIs for asset discovery, wallet analytics, transfer history, and p
 - Prefer these APIs when you want asset analytics or historical data without maintaining a custom indexer.
 - If you need real-time updates, pair with the `webhooks` skill.
 
-## Agentic Gateway
-Most Data APIs are also available via the Agentic Gateway (`https://x402.alchemy.com/...`) without an API key.
-See the `agentic-gateway` skill for SIWE authentication and x402 payment setup.
+## Other ways to access this API
+
+This file is part of the `alchemy-api` skill — for app code that ships with an Alchemy API key. Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill). The CLI exposes one command group per Data API surface:
+  ```bash
+  alchemy tokens --help --json --no-interactive
+  alchemy nfts --help
+  alchemy prices --help
+  alchemy portfolio --help
+  alchemy simulate --help
+  alchemy transfers --help
+  ```
+  See each surface's reference file (`data-token-api.md`, `data-nft-api.md`, `data-prices-api.md`, `data-portfolio-apis.md`, `data-simulation-api.md`, `data-transfers-api.md`) for concrete commands.
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first; tool names follow the API surface (e.g., `getTokenBalances`, `getNFTsForOwner`, `getTokenPricesBySymbol`, `getTokensByAddress`, `simulateAssetChanges`, `getAssetTransfers`). See per-surface reference files for the full tool list.
+
+- **App code without an API key** (autonomous agent paying per-request, or explicit x402/MPP — see the `agentic-gateway` skill): same APIs exposed at `https://x402.alchemy.com/...` (x402) or `https://mpp.alchemy.com/...` (MPP); URL paths match the per-surface base URLs documented in each reference file.
 
 ## Cross-References
 - `node-apis` skill → `node-enhanced-apis.md` for related RPC-style endpoints.
 - `recipes` skill for end-to-end workflows.
-- `agentic-gateway` skill for easy agent access to Alchemy's developer platform.
+- `alchemy-cli` skill for live agent work via the local CLI (preferred local fallback).
+- `alchemy-mcp` skill for live agent work via the hosted MCP server (when CLI is not installed).
+- `agentic-gateway` skill for app code without an API key (x402 or MPP).
 
 ## Official Docs
 - [Data APIs Overview](https://www.alchemy.com/docs/reference/data-overview)

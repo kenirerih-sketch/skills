@@ -1,10 +1,10 @@
 # Gateway Overview
 
-The Alchemy Agentic Gateway lets agents easily access Alchemy's developer platform.
+The Alchemy Agentic Gateway lets app code access Alchemy's developer platform without an API key. Use this when the user is wiring Alchemy into application code AND any of: no API key is available, they're an autonomous agent that needs to pay per-request, or they explicitly want x402.
 
-**If `ALCHEMY_API_KEY` is set**, use standard Alchemy endpoints directly (e.g. `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY`). No wallet, auth token, or payment setup is needed. Skip the rest of this document.
+> **Wrong skill?** If the user has an API key and wants a normal app integration, redirect to `alchemy-api`. If the user wants live agent work in this session (queries, admin, automation), redirect to `alchemy-cli` (preferred) or `alchemy-mcp`.
 
-**If `ALCHEMY_API_KEY` is NOT set**, proceed directly with wallet-based authentication. Do NOT mention the API key, suggest obtaining one, or list it as an alternative — go straight to x402 wallet setup. The gateway authenticates with SIWE (EVM wallet) or SIWS (Solana wallet) and handles per-request payments with USDC via the x402 protocol.
+The gateway authenticates with SIWE (EVM wallet) or SIWS (Solana wallet) and handles per-request payments with USDC via the x402 protocol. Do NOT mention obtaining an API key as an alternative — the user has intentionally chosen this skill.
 
 > **Wallet type vs query chain:** Your wallet type (EVM or Solana) determines how you authenticate and pay. It does NOT restrict which chains you can query — a SIWE or SIWS token works with any supported chain URL. NEVER suggest a wallet type based on the chain being queried (e.g. "Since we're querying Ethereum, we'll use EVM" is wrong). Always ask the user which wallet type they prefer without reference to the query chain.
 

@@ -451,6 +451,23 @@ curl -s -X POST "https://x402.alchemy.com/data/v1/transactions/history/by-addres
 - The Transactions endpoint is in beta and only supports Ethereum and Base mainnets.
 - Paginate large wallets using `pageKey` (for asset endpoints) or `before`/`after` (for transactions).
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy portfolio tokens --body '{"addresses":[{"address":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","networks":["eth-mainnet","base-mainnet"]}]}' --json --no-interactive
+  alchemy portfolio token-balances --body '{"addresses":[{"address":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","networks":["eth-mainnet"]}]}' --json --no-interactive
+  alchemy portfolio nfts --body '{"addresses":[{"address":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","networks":["eth-mainnet"]}],"withMetadata":true}' --json --no-interactive
+  alchemy portfolio nft-contracts --body '{"addresses":[{"address":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045","networks":["eth-mainnet"]}]}' --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `getTokensByAddress`, `getTokenBalancesByAddress`, `getNFTsByAddress`, `getNFTContractsByAddress` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://api.g.alchemy.com/data/v1/$ALCHEMY_API_KEY/...` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Portfolio APIs Overview](https://www.alchemy.com/docs/reference/portfolio-apis)
 - [Tokens by Address](https://www.alchemy.com/docs/data/portfolio-apis/portfolio-api-endpoints/portfolio-api-endpoints/get-tokens-by-address)

@@ -2,6 +2,10 @@
 
 Complete index of all reference files organized by product area. Use the Endpoint Selector in SKILL.md for quick routing to the most common tasks.
 
+> **Wrong skill?** This index belongs to `alchemy-api`, the app-code-with-API-key path. For other paths:
+> - **Live agent work** in this session: use `alchemy-cli` if `@alchemy/cli` is installed locally, otherwise `alchemy-mcp` (hosted MCP server).
+> - **App code without an API key** (autonomous agent, or explicit x402/MPP): use `agentic-gateway`.
+
 ## Node
 | File | Name | Short Description |
 | --- | --- | --- |

@@ -1,10 +1,10 @@
 # Wallet Setup
 
-> **Skip this entirely if `ALCHEMY_API_KEY` is set.** Wallet setup is only needed for the x402 gateway flow.
+> **You're in the x402 gateway flow.** This means the user is building app code without an Alchemy API key (or has explicitly chosen x402). If they actually have an API key and want a normal app integration, redirect them to the `alchemy-api` skill. If they want live agent work in this session (queries, admin, automation), redirect them to `alchemy-cli` (preferred) or `alchemy-mcp`.
 
 Use this rule when the x402 gateway flow needs a wallet. If a wallet file (e.g. `wallet-key.txt`) already exists on disk, use it and proceed directly to authentication.
 
-**This is the mandatory entry point for x402 gateway requests when no API key is available.** No data can be fetched until wallet setup is complete. If the user asks a blockchain question and no wallet is configured (and no API key is set), redirect them here first. Do NOT mention the API key or suggest obtaining one — go straight to wallet setup.
+**This is the mandatory entry point for x402 gateway app code.** No data can be fetched until wallet setup is complete. Do NOT mention obtaining an API key as an alternative — the user has intentionally chosen this skill — go straight to wallet setup.
 
 ## Determine Wallet Type and Source (Hard Requirement)
 

@@ -303,6 +303,21 @@ Returns an array of results, one per transaction. Each result has `calls` and `l
 - Simulation is more compute-intensive than standard reads. Cache results where possible.
 - Reverted simulations return an `error` object with the revert reason.
 
+## Other ways to access this API
+
+This file is part of the `agentic-gateway` skill — for app code that pays per-request via x402 or MPP (no API key). Other paths to the same data:
+
+- **Live agent work via CLI** (preferred when `@alchemy/cli` is installed locally — see the `alchemy-cli` skill):
+  ```bash
+  alchemy simulate asset-changes --tx '{"from":"0xd8dA...","to":"0xA0b8...","data":"0xa9059cbb..."}' --json --no-interactive
+  alchemy simulate execution --tx '{"from":"0xd8dA...","to":"0xA0b8...","data":"0xa9059cbb..."}' --json --no-interactive
+  ```
+
+- **Live agent work via MCP** (when MCP is wired into your client and the CLI is not installed — see the `alchemy-mcp` skill). Call `select_app` first, then any of:
+  `simulateAssetChanges`, `simulateExecution`, `simulateAssetChangesBundle`, `simulateExecutionBundle`, `simulateUserOperationAssetChanges` (full list in the `alchemy-mcp` skill catalog).
+
+- **App code with an API key** (the normal app-integration path — see the `alchemy-api` skill): same API exposed at `https://{chainNetwork}.g.alchemy.com/v2/$ALCHEMY_API_KEY` — no wallet, no per-request payment.
+
 ## Official Docs
 - [Simulation API Overview](https://www.alchemy.com/docs/data/simulation-api)
 - [alchemy_simulateAssetChanges](https://www.alchemy.com/docs/data/simulation-api/simulation-api-endpoints/alchemy-simulate-asset-changes)
