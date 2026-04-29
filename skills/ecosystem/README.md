@@ -19,16 +19,15 @@ skills/ecosystem/
 ├── README.md            ← this file
 ├── CONTRIBUTING.md      ← how partners PR a new skill
 ├── TEMPLATE/            ← copy this to bootstrap a new skill
-│   ├── SKILL.md
+│   ├── SKILL.template.md   ← rename to SKILL.md after copying
 │   ├── agents/
 │   │   └── openai.yaml  ← OpenAI/Codex picker manifest (recommended)
 │   └── references/
-└── skills/
-    └── <partner>/       ← partner skill (e.g. allium/)
-        ├── SKILL.md
-        ├── agents/
-        │   └── openai.yaml
-        └── references/
+└── <partner>/           ← partner skill (e.g. allium/)
+    ├── SKILL.md
+    ├── agents/
+    │   └── openai.yaml
+    └── references/
 ```
 
 Each partner gets one folder per skill. If a partner ships multiple non-overlapping skills, they live as siblings (e.g. `partner-data/`, `partner-staking/`).
@@ -37,7 +36,7 @@ Each partner gets one folder per skill. If a partner ships multiple non-overlapp
 
 Ecosystem skills live deeper than the Vercel `skills` CLI's default scan path (which only walks direct children of `./skills/`). Discovery for these paths is driven by [`/.claude-plugin/plugin.json`](../../.claude-plugin/plugin.json) at the repo root, which the CLI reads as a documented escape hatch (see [Plugin Manifest Discovery](https://github.com/vercel-labs/skills#plugin-manifest-discovery) in the CLI README).
 
-When adding a new partner skill, add an entry to `plugin.json` so it gets installed by `npx skills add alchemyplatform/skills`. Without a manifest entry, the CLI will not find skills nested under `skills/ecosystem/skills/`.
+When adding a new partner skill, add an entry to `plugin.json` so it gets installed by `npx skills add alchemyplatform/skills`. Without a manifest entry, the CLI will not find skills nested under `skills/ecosystem/`.
 
 ## Current partners
 

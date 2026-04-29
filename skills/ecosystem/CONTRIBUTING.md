@@ -28,7 +28,7 @@ If you're unsure whether your skill overlaps, open a draft PR and ask. We'd rath
 
 1. Fork `alchemyplatform/skills`
 2. Confirm your skill is non-overlapping (see above)
-3. Copy `skills/ecosystem/TEMPLATE/` to `skills/ecosystem/skills/<your-skill>/`
+3. Copy `skills/ecosystem/TEMPLATE/` to `skills/ecosystem/<your-skill>/`, then rename `SKILL.template.md` → `SKILL.md` inside it (the `.template` suffix in the source keeps the template from being picked up as a real skill by the skills CLI scan)
 4. Fill in `SKILL.md` (instructions, scope contract, routing back to first-party). Optionally fill in `agents/openai.yaml` for a polished Codex picker entry — see "OpenAI/Codex manifest" below
 5. Add your skill's path to [`/.claude-plugin/plugin.json`](../../.claude-plugin/plugin.json) at the repo root
 6. Open a PR
@@ -76,7 +76,7 @@ After adding the skill folder, add its path to `/.claude-plugin/plugin.json`:
 {
   "name": "alchemy",
   "skills": [
-    "./skills/ecosystem/skills/<your-skill>"
+    "./skills/ecosystem/<your-skill>"
   ]
 }
 ```

@@ -13,7 +13,7 @@ metadata:
 
 # <Your Skill Title>
 
-> **Replace this whole file** when you copy this template into `skills/ecosystem/skills/<your-skill>/`. Update the `name` (must match the parent directory name), the `description`, and every section below.
+> **Replace this whole file** when you copy this template into `skills/ecosystem/<your-skill>/`. Update the `name` (must match the parent directory name), the `description`, and every section below.
 
 Brief intro to what this skill does in 1–2 sentences.
 
